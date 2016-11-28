@@ -16,6 +16,16 @@ class Keywords:
 		'seasonal depression'
 		]
 
+		self.hashtags = [
+		'whatyoudontsee',
+		'mydepressionlookslike',
+		'myanxietylookslike',
+		'mentalillnessfeelslike',
+		'mentalhealthawarenessday',
+		'worldmentalhealthday',
+		'depressionawareness'
+		]
+
 		self.advocate_keywords = [
 		'mental health advocate',
 		'social worker',
@@ -23,8 +33,6 @@ class Keywords:
 		'doctor',
 		'clinical psychologist', 
 		'suicide prevention',
-		'endthestigma',
-		'end the stigma',
 		'researcher',
 		'health specialist',
 		'against depression',
@@ -42,7 +50,7 @@ class Keywords:
 		'pain', 'frustrated', 'depressed',
 		'anxiety','suicidal','broken','sadness',
 		'ugly','pain','death','fat','crying',
-		'cry','cutting','help','gay','severe',
+		'cry','cutting','help','gay','severe', 'scars',
 		'appetite','imissyou','severe','appetite',
 		'nausea','drowsiness','fatigue','addictive',
 		'attacks','episodes','anxious','frustrated',
