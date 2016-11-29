@@ -5,45 +5,6 @@
         "BipolarMentions":0,
         "DepressionRefDesc":0,
         "DepressionRefDiagnosis":1,
-        "NumMentionsDiagnosis":1,
-        "PTSDMentions":0,
-        "SurvivorRefDesc":0,
-        "SurvivorRefDiagnosis":0,
-        "acctCreated":"2016-05-16 14:50:08",
-        "depressionawareness":0,
-        "diagnosisMade":"25/11/2016 03:59",
-        "diagnosisStatement":"@VanitaSundaram yep....thought I was going nuts! Thought I had depression but then was diagnosed with menopause. Try Black Cohosh Xx",
-        "diagnosislink":"https://twitter.com/moorlandsoul/status/801878047834177536\n",
-        "favorites":"0",
-        "hashtags":"#whatyoudontsee",
-        "illness_type":"anxiety",
-        "location":"",
-        "mentalhealthawarenessday":0,
-        "mentalillnessfeelslike":0,
-        "mentions":"@VanitaSundaram",
-        "myanxietylookslike":0,
-        "mydepressionlookslike":0,
-        "numFavorites":11330,
-        "numFollowers":416,
-        "numFriends":180,
-        "numTweetsPosted":8559,
-        "num_major_depressionMentions":0,
-        "num_pmddMentions":0,
-        "num_schizophreniaMentions":0,
-        "num_situationalMentions":0,
-        "retweets":"0",
-        "screenName":"moorlandsoul",
-        "seasonal_disorderMentions":0,
-        "usrDesc":"Just beyond the far horizon lies a waiting world unknown, like the dawn it's beauty beckons with a wonder all of its own ☆♡☆ Witch, Nature & animal lover No DM",
-        "whatyoudontsee":1,
-        "worldmentalhealthday":0
-    },
-    {
-        "AdvocateRefDesc":0,
-        "AnxietyMentions":0,
-        "BipolarMentions":0,
-        "DepressionRefDesc":0,
-        "DepressionRefDiagnosis":1,
         "NumMentionsDiagnosis":0,
         "PTSDMentions":0,
         "SurvivorRefDesc":0,
@@ -82,7 +43,7 @@
             "hashtags":{
                 "#imnotdoneyet":1,
                 "#notostigma":1,
-                "#whatyoudontsee":2
+                "#whatyoudontsee":1
             },
             "illness_mentions":[
                 {
@@ -118,7 +79,7 @@
                     "disease":"schizophrenia"
                 }
             ],
-            "totalReturned":2,
+            "totalReturned":1,
             "total_advocate_mentions":0,
             "total_survivor_mentions":0
         }

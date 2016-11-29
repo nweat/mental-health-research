@@ -1,4 +1,12 @@
-import tweepy,math,random
+try:
+	import json
+except ImportError:
+	import simplejson as json
+
+import datetime, tweepy, math, random
+from collections import Counter
+from .. import models
+from .. import helpers
 
 class NormalUsersManager:
 
