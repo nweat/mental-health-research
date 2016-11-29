@@ -1,4 +1,7 @@
 class Keywords:
+	"""
+	REFERENCES: https://adarkershadeofblue.wordpress.com/2011/08/20/99-words-about-depression/
+	"""
 	
 	def __init__(self):
 
@@ -75,4 +78,3 @@ class Keywords:
 		'survivor of mental illness','survivor of mentalillness','mentalillness survivor',
 		'survivor of depression'
 		]
-		#https://adarkershadeofblue.wordpress.com/2011/08/20/99-words-about-depression/

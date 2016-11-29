@@ -1,0 +1,126 @@
+[
+    {
+        "AdvocateRefDesc":0,
+        "AnxietyMentions":0,
+        "BipolarMentions":0,
+        "DepressionRefDesc":0,
+        "DepressionRefDiagnosis":1,
+        "NumMentionsDiagnosis":1,
+        "PTSDMentions":0,
+        "SurvivorRefDesc":0,
+        "SurvivorRefDiagnosis":0,
+        "acctCreated":"2016-05-16 14:50:08",
+        "depressionawareness":0,
+        "diagnosisMade":"25/11/2016 03:59",
+        "diagnosisStatement":"@VanitaSundaram yep....thought I was going nuts! Thought I had depression but then was diagnosed with menopause. Try Black Cohosh Xx",
+        "diagnosislink":"https://twitter.com/moorlandsoul/status/801878047834177536\n",
+        "favorites":"0",
+        "hashtags":"#whatyoudontsee",
+        "illness_type":"anxiety",
+        "location":"",
+        "mentalhealthawarenessday":0,
+        "mentalillnessfeelslike":0,
+        "mentions":"@VanitaSundaram",
+        "myanxietylookslike":0,
+        "mydepressionlookslike":0,
+        "numFavorites":11330,
+        "numFollowers":416,
+        "numFriends":180,
+        "numTweetsPosted":8559,
+        "num_major_depressionMentions":0,
+        "num_pmddMentions":0,
+        "num_schizophreniaMentions":0,
+        "num_situationalMentions":0,
+        "retweets":"0",
+        "screenName":"moorlandsoul",
+        "seasonal_disorderMentions":0,
+        "usrDesc":"Just beyond the far horizon lies a waiting world unknown, like the dawn it's beauty beckons with a wonder all of its own ☆♡☆ Witch, Nature & animal lover No DM",
+        "whatyoudontsee":1,
+        "worldmentalhealthday":0
+    },
+    {
+        "AdvocateRefDesc":0,
+        "AnxietyMentions":0,
+        "BipolarMentions":0,
+        "DepressionRefDesc":0,
+        "DepressionRefDiagnosis":1,
+        "NumMentionsDiagnosis":0,
+        "PTSDMentions":0,
+        "SurvivorRefDesc":0,
+        "SurvivorRefDiagnosis":0,
+        "acctCreated":"2011-08-09 13:42:20",
+        "depressionawareness":0,
+        "diagnosisMade":"24/11/2016 04:21",
+        "diagnosisStatement":"03 June this year I was first diagnosed with depression . Since then life has taken a different direction. But #ImNotDoneYet #NoToStigma",
+        "diagnosislink":"https://twitter.com/Mr_Ndue/status/801521139805720576\n",
+        "favorites":"0",
+        "hashtags":"#imnotdoneyet #whatyoudontsee #notostigma",
+        "illness_type":"anxiety",
+        "location":"",
+        "mentalhealthawarenessday":0,
+        "mentalillnessfeelslike":0,
+        "mentions":"",
+        "myanxietylookslike":0,
+        "mydepressionlookslike":0,
+        "numFavorites":378,
+        "numFollowers":138,
+        "numFriends":216,
+        "numTweetsPosted":3397,
+        "num_major_depressionMentions":0,
+        "num_pmddMentions":0,
+        "num_schizophreniaMentions":0,
+        "num_situationalMentions":0,
+        "retweets":"0",
+        "screenName":"Mr_Ndue",
+        "seasonal_disorderMentions":0,
+        "usrDesc":"The OG.",
+        "whatyoudontsee":1,
+        "worldmentalhealthday":0
+    },
+    {
+        "overall":{
+            "hashtags":{
+                "#imnotdoneyet":1,
+                "#notostigma":1,
+                "#whatyoudontsee":2
+            },
+            "illness_mentions":[
+                {
+                    "count":0,
+                    "disease":"anxiety"
+                },
+                {
+                    "count":0,
+                    "disease":"bipolar"
+                },
+                {
+                    "count":0,
+                    "disease":"seasonal"
+                },
+                {
+                    "count":0,
+                    "disease":"ptsd"
+                },
+                {
+                    "count":0,
+                    "disease":"major_depression"
+                },
+                {
+                    "count":0,
+                    "disease":"pmdd"
+                },
+                {
+                    "count":0,
+                    "disease":"situational_depression"
+                },
+                {
+                    "count":0,
+                    "disease":"schizophrenia"
+                }
+            ],
+            "totalReturned":2,
+            "total_advocate_mentions":0,
+            "total_survivor_mentions":0
+        }
+    }
+]

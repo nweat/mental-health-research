@@ -1,1 +1,2 @@
-from TweetManager import TweetManager
+from StatsManager import StatsManager
+from NormalUsersManager import NormalUsersManager
