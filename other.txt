@@ -1,8 +1,0 @@
-#tweets posted within one year up to diagnosis posted check if atleast 300
-#dateDiagnosed = DT.datetime.strptime(usr['date_of_diagnosis'], "%d/%m/%Y %H:%M")
-#since = dateDiagnosed.replace(year=dateDiagnosed.year-1)
-#since = since.strftime('%Y-%m-%d')
-#until = dateDiagnosed#.replace(day=dateDiagnosed.day+1)
-#until = until.strftime('%Y-%m-%d')
-#NumTweetsYrUpToDiagnosis = got.manager.TweetCriteria().setUsername(usr['username']).setSince(since).setUntil(until).setMaxTweets(200)
-#NumTweetsYrUpToDiagnosis = len(got.manager.TweetManager.getTweets(NumTweetsYrUpToDiagnosis))

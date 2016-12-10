@@ -6,14 +6,12 @@ except ImportError:
 import datetime, tweepy
 from collections import Counter
 from .. import models
-from .. import helpers
 
 class StatsManager:
 	
-	def __init__(self, twitter, twitter_stream = ''):
+	def __init__(self, twitter):
 		self.model = models.Keywords()
 		self.twitter = twitter
-		self.twitter_stream = twitter_stream
 		
 	@staticmethod
 	def extractDiagnosedUsers(file):
