@@ -10,6 +10,7 @@ class Keywords:
 		'anxiety',
 		'major depression',
 		'bipolar disorder',
+		'depression',
 		'bpd',
 		'bipolar',
 		'seasonal affective disorder',

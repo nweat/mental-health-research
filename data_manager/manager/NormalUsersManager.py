@@ -73,6 +73,14 @@ class NormalUsersManager:
 		
 
 	def breadthTraversal(self, seedNodes, outputFile, limit = 100, sampleSize = 4, depth = 1):
+		"""
+		:Description: build a network of random sample of normal users starting from seed nodes
+		:param seedNodes: starting nodes
+		:param limit: number of followers to return
+		:param sampleSize: select subset of n filtered followers e.g. if sampleSize = 4 then return n/4 random samples
+		:param depth: limit network traversal e.g. depth 1 will build a random network of seed nodes' followers
+		:return: random networks of followers
+		"""
 		flimit = limit
 		fsampleSize = sampleSize
 
@@ -88,7 +96,7 @@ class NormalUsersManager:
 					d += 1
 					(queue, next_queue) = (next_queue, [])
 					for _fid in queue:
-						_follower_ids = self.getRandomFollowers(_fid, limit)
+						_follower_ids = self.getRandomFollowers(_fid, flimit, fsampleSize)
 
 						if _follower_ids != None or len(_follower_ids) != 0:
 							outputFile.write('\n\n%d random sample followers of %s:' % (len(_follower_ids),_fid))

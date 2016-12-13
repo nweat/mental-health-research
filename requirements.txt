@@ -1,3 +1,11 @@
 tweepy
 simplejson
 PyYAML
+numpy 
+scipy
+matplotlib
+ipython
+jupyter
+pandas
+sympy
+nose

@@ -3,7 +3,10 @@ try:
 except ImportError:
 	import simplejson as json
 
-import datetime, tweepy
+import datetime, tweepy, pprint
+import numpy as np
+import pandas as pd
+from pandas.io.json import json_normalize
 from collections import Counter
 from .. import models
 
@@ -33,8 +36,132 @@ class StatsManager:
 				'link':row[9]})
 		return diagnosed_users[1:]
 
+	def generataFrequencyMatrixBasedOnIllnessMentionsByUser(self, diagnosed_users, illness = ''):
+		"""
+		NOTE: http://www.linuxtopia.org/online_books/programming_books/python_programming/python_ch20s05.html
+		"""
+		users_with_multiple_diagnosis = []
+		counter = 0
+		final = []
+		columns = 5
+		rows = 5
+		matrix = [[0 for i in range(rows)] for j in range(columns)] # build a 5 x 5 matrix
 
-	def generate_stats(self, illness, diagnosed_users):
+
+		for usr in diagnosed_users:
+			BPD_check = 0
+			bipolar_check = 0
+			anxiety_check = 0
+			depression_check = 0 # combine major and seasonal and situational
+			ptsd_check = 0
+
+			for idx, value in enumerate(self.model.disease_list):
+				if (value == 'bpd') and value in usr['text'].lower():
+					BPD_check = 1
+				if (value == 'bipolar disorder' or value == 'bipolar') and value in usr['text'].lower():
+					bipolar_check = 1
+				if value == 'anxiety' and value in usr['text'].lower():
+					anxiety_check = 1
+				if (value == 'major depression' or value == 'seasonal depression' or value == 'depression') and value in usr['text'].lower():
+					depression_check = 1
+				if (value == 'ptsd') and value in usr['text'].lower():
+					ptsd_check = 1
+
+			# check if user already made diagnosis statement, then just update his disease mentions
+			if usr['username'] in users_with_multiple_diagnosis:
+				for f in final:
+					if f['screenName'] == usr['username']:
+						if (BPD_check != f['bpd']) and f['bpd'] == 0:
+							f['bpd'] = BPD_check
+						if (bipolar_check != f['bipolar']) and f['bipolar'] == 0:
+							f['bipolar'] = bipolar_check
+						if (anxiety_check != f['anxiety']) and f['anxiety'] == 0:
+							f['anxiety'] = anxiety_check
+						if (ptsd_check != f['ptsd']) and f['ptsd'] == 0:
+							f['ptsd'] = ptsd_check
+						if (depression_check != f['depression']) and f['depression'] == 0:
+							f['depression'] = depression_check
+					else:
+						continue
+						
+			# add user if not yet exists
+			if usr['username'] not in users_with_multiple_diagnosis:
+				final.append({
+					'screenName': usr['username'],
+					'anxiety': anxiety_check,
+					'depression': depression_check,
+					'bpd': BPD_check,
+					'bipolar': bipolar_check,
+					'ptsd': ptsd_check
+				})
+			users_with_multiple_diagnosis.append(usr['username'])
+		#print json.dumps(final, indent = 4)
+
+		for j in range(columns):
+			for i in range(rows):
+				if i == 0: # count users who state anxiety and other disease
+					for f in final:
+						if j == 1:
+							if f['anxiety'] == 1 and f['depression'] == 1:
+								matrix[i][j] += 1
+						if j == 2:
+							if f['anxiety'] == 1 and f['bipolar'] == 1:
+								matrix[i][j] += 1
+						if j == 3:
+							if f['anxiety'] == 1 and f['bpd'] == 1:
+								matrix[i][j] += 1
+						if j == 4:
+							if f['anxiety'] == 1 and f['ptsd'] == 1:
+								matrix[i][j] += 1
+
+				if i == 1: # count users who state depression and other disease
+					for f in final:
+						if j == 2:
+							if f['depression'] == 1 and f['bipolar'] == 1:
+								matrix[i][j] += 1
+						if j == 3:
+							if f['depression'] == 1 and f['bpd'] == 1:
+								matrix[i][j] += 1
+						if j == 4:
+							if f['depression'] == 1 and f['ptsd'] == 1:
+								matrix[i][j] += 1
+
+				if i == 2: # count users who state bipolar and other disease
+					for f in final:
+						if j == 3:
+							if f['bipolar'] == 1 and f['bpd'] == 1:
+								matrix[i][j] += 1
+						if j == 4:
+							if f['bipolar'] == 1 and f['ptsd'] == 1:
+								matrix[i][j] += 1
+
+				if i == 3: # count users who state bpd and other disease
+					for f in final:
+						if j == 4:
+							if f['bpd'] == 1 and f['ptsd'] == 1:
+								matrix[i][j] += 1
+
+
+		print 'Generated matrix for %s\n' % illness
+		pprint.pprint(matrix)
+		return matrix
+
+	def sumIndividualMatrices(self, m1, m2, m3, m4, m5):
+		columns = 5
+		rows = 5
+		final= [ rows*[0] for i in range(columns) ]
+
+		for i in range(columns):
+			for j in range(rows):
+				final[i][j]= m1[i][j] + m2[i][j] + m3[i][j] + m4[i][j] + m5[i][j]
+
+		print 'Final matrix \n'
+		pprint.pprint(final)
+		return final
+
+	
+
+	def generateStats(self, illness, diagnosed_users):
 		hashtag_mentions = []
 		total_anxiety_mentions = total_bipolar_mentions = total_seasonal_disorder = total_ptsd = total_major_depression = total_pmdd = total_situational = total_schizophrenia = 0
 		total_advocates = total_survivor = 0
@@ -186,3 +313,12 @@ class StatsManager:
 			]
 			}})
 		return final
+
+	def statsPandas(self, ifile):
+		with open(ifile) as data_file:
+			data = json.load(data_file)
+		
+		df = pd.DataFrame.from_records(data)
+		results = df.groupby(['DiagnosisType', 'mentions'])['numMentions'].max()
+		return results.unstack(0)
+
