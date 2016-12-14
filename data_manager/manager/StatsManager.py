@@ -101,6 +101,9 @@ class StatsManager:
 			for i in range(rows):
 				if i == 0: # count users who state anxiety and other disease
 					for f in final:
+						if j == 0:
+							if f['anxiety'] == 1: #and f['bipolar'] == 0 and f['depression'] == 0 and f['bpd'] == 0 and f['ptsd'] == 0
+								matrix[i][j] += 1
 						if j == 1:
 							if f['anxiety'] == 1 and f['depression'] == 1:
 								matrix[i][j] += 1
@@ -116,6 +119,11 @@ class StatsManager:
 
 				if i == 1: # count users who state depression and other disease
 					for f in final:
+						if j == 1:
+							if f['depression'] == 1:
+								matrix[i][j] += 1
+								if illness == 'bipolar':
+									print f['screenName']
 						if j == 2:
 							if f['depression'] == 1 and f['bipolar'] == 1:
 								matrix[i][j] += 1
@@ -128,6 +136,9 @@ class StatsManager:
 
 				if i == 2: # count users who state bipolar and other disease
 					for f in final:
+						if j == 2:
+							if f['bipolar'] == 1:
+								matrix[i][j] += 1
 						if j == 3:
 							if f['bipolar'] == 1 and f['bpd'] == 1:
 								matrix[i][j] += 1
@@ -137,14 +148,24 @@ class StatsManager:
 
 				if i == 3: # count users who state bpd and other disease
 					for f in final:
+						if j == 3:
+							if f['bpd'] == 1:
+								matrix[i][j] += 1
 						if j == 4:
 							if f['bpd'] == 1 and f['ptsd'] == 1:
+								matrix[i][j] += 1
+
+				if i == 4: # count users who state ptsd only
+					for f in final:
+						if j == 4:
+							if f['ptsd'] == 1:
 								matrix[i][j] += 1
 
 
 		print 'Generated matrix for %s\n' % illness
 		pprint.pprint(matrix)
 		return matrix
+
 
 	def sumIndividualMatrices(self, m1, m2, m3, m4, m5):
 		columns = 5
