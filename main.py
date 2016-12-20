@@ -5,7 +5,7 @@ try:
 except ImportError:
 	import simplejson as json
 
-import data_manager,sys,getopt,codecs,tweepy,yaml,os,os.path
+import data_manager,sys,getopt,codecs,tweepy,yaml,os,os.path,csv
 
 def main(argv):
 	ifile = ''
@@ -18,7 +18,10 @@ def main(argv):
 	normalusers = ''
 	pstats = ''
 	illness = ''
+	illness2 = ''
 	matrix = ''
+	partition = ''
+	patient_timeline = ''
 	processed_diagnosed_users = []
 
 	config = open('config.yaml')
@@ -42,14 +45,14 @@ def main(argv):
 		auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 		auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 		api = tweepy.API(auth, wait_on_rate_limit = True, wait_on_rate_limit_notify = True)
-		myStreamListener = data_manager.manager.TwitterStreamListener(500, path) # pass file and limit of sample normal user candidates to write to file
-		myStream = tweepy.Stream(auth = api.auth, listener = myStreamListener)
+		#myStreamListener = data_manager.manager.TwitterStreamListener(500, path) # pass file and limit of sample normal user candidates to write to file
+		#myStream = tweepy.Stream(auth = api.auth, listener = myStreamListener)
 
 		helper_obj = data_manager.manager.HelperManager()
 		stats_obj = data_manager.manager.StatsManager(api)
-		normal_user_obj = data_manager.manager.NormalUsersManager(api, myStream)
+		#normal_user_obj = data_manager.manager.NormalUsersManager(api, myStream)
 		
-		opts, args = getopt.getopt(argv, "", ("ifile=","ifile2=","ifile3=","ifile4=","ifile5=","ofile=","stats=","illness=","normalusers=","pstats=","matrix="))
+		opts, args = getopt.getopt(argv, "", ("patient_timeline=","illness2=","partition=","ifile=","ifile2=","ifile3=","ifile4=","ifile5=","ofile=","stats=","illness=","normalusers=","pstats=","matrix="))
 				
 		for opt,arg in opts:
 			if opt == '--ifile':
@@ -74,7 +77,13 @@ def main(argv):
 				ifile4 = arg
 			elif opt == '--ifile5':
 				ifile5 = arg
-
+			elif opt == '--partition':
+				partition = arg
+			elif opt == '--illness2':
+				illness2 = arg
+			elif opt == '--patient_timeline':
+				patient_timeline = arg
+				
 		if stats and illness:
 			# python main.py --ifile data_manager/data/diagnosed_users_in.csv --stats 1 --illness anxiety --ofile data_manager/data/out.json
 			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
@@ -90,6 +99,8 @@ def main(argv):
 			outputFile.write(json.dumps(processed_diagnosed_users, sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
 			print '\n%s Results added to file\n' % len(processed_diagnosed_users)
 			outputFile.close()
+
+		#################################################################BUILD NORMAL USERS NETWORK
 		elif normalusers and ofile:
 		   outputFile = codecs.open(ofile, "w+", "utf-8")
 
@@ -108,6 +119,36 @@ def main(argv):
 		elif pstats:
 			stats = stats_obj.statsPandas(ifile)
 			print stats
+
+		#################################################################PATIENTS TWEET ANALYSIS
+		#partition data focusing on bipolar, depression and with anxiety
+		elif partition and illness:
+			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
+			f = open(ofile, 'wb')
+			writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+			writer.writerow(["username","text"])
+			print "\n******Extracting twitter users who made diagnosis statements******"    
+			diagnosed_users = stats_obj.extractDiagnosedUsers(inputFile)
+			if diagnosed_users:
+				print "Done extracting users..."
+				inputFile.close()
+			stats_obj.tagDataForTextMiningTask(diagnosed_users, writer, illness, illness2)
+			f.close()
+        #
+		elif patient_timeline:
+			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv
+			# python main.py --ifile patient_tweet_analysis/bipolar_patients.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv
+			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
+
+			f = open(ofile, 'wb')
+			writer = csv.writer(f) # quoting = csv.QUOTE_ALL
+			writer.writerow(["userid","screeName","lang","tweetID","tweetCreated","tweetText","favorites","retweet"])
+			print "\n******Extracting twitter users who made diagnosis statements******"  
+			diagnosed_users = stats_obj.getPatientNames(ifile)
+			stats_obj.getTweetsPerPartition(diagnosed_users, writer) 
+			f.close()
+
+		#################################################################BUILD MATRIX TO SEE COMORBID PATIENTS
 		elif matrix:
 			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
 			inputFile2 = codecs.open(ifile2, 'r', encoding = "utf-8")

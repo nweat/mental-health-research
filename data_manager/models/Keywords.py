@@ -8,8 +8,10 @@ class Keywords:
 		self.disease_list = [
 		'ptsd',
 		'anxiety',
+		'schizophrenia',
 		'major depression',
-		'bipolar disorder',
+		'major depressive',
+		'borderline personality disorder',
 		'depression',
 		'bpd',
 		'bipolar',

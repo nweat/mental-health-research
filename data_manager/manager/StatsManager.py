@@ -3,7 +3,7 @@ try:
 except ImportError:
 	import simplejson as json
 
-import datetime, tweepy, pprint
+import datetime, tweepy, pprint, csv
 import numpy as np
 import pandas as pd
 from pandas.io.json import json_normalize
@@ -19,7 +19,7 @@ class StatsManager:
 	@staticmethod
 	def extractDiagnosedUsers(file):
 		"""
-		NOTE: diagnosis statements extracted using Getoldtweets package to retreive more tweets
+		NOTE: raw diagnosis statements extracted using Getoldtweets package to retreive more tweets
 		"""
 		diagnosed_users = []
 		for row in file:
@@ -36,6 +36,116 @@ class StatsManager:
 				'link':row[9]})
 		return diagnosed_users[1:]
 
+	@staticmethod
+	def getPatientNames(file):
+		diagnosed_users = []
+
+		f = open(file, 'rt')
+		try:
+			reader = csv.reader(f)
+			for row in reader:
+				diagnosed_users.append(row[0])
+			return diagnosed_users[1:]
+		finally:
+			f.close()
+			
+	def getTweetsPerPartition(self, diagnosed_users, writer):
+		for usr in diagnosed_users:
+			try:
+				#make initial request for most recent tweets (200 is the maximum allowed count)
+				new_tweets = self.twitter.user_timeline(screen_name = usr, count=200)
+				print "User: %s\n" % (usr)
+			except tweepy.TweepError as e:
+				print 'I just caught the exception: %s' % str(e)
+				continue
+			self.get_all_tweets(usr, new_tweets, writer)	
+
+
+	def get_all_tweets(self, screen_name, new_tweets, writer):
+		"""
+		https://gist.github.com/yanofsky/5436496
+		check that users are not duplicated, only get tweets once for a user
+		"""
+		#Twitter only allows access to a users most recent 3240 tweets with this method
+		
+		#initialize a list to hold all the tweepy Tweets
+		alltweets = []	
+
+		#save most recent tweets
+		alltweets.extend(new_tweets)
+		
+		#save the id of the oldest tweet less one
+		oldest = alltweets[-1].id - 1
+		
+		#keep grabbing tweets until there are no tweets left to grab
+		while len(new_tweets) > 0:
+			print "getting tweets before %s" % (oldest)
+
+			try:
+				#make initial request for most recent tweets (200 is the maximum allowed count)
+				new_tweets = self.twitter.user_timeline(screen_name = screen_name,count=200,max_id=oldest)
+			except tweepy.TweepError as e:
+				print 'I just caught the exception: %s' % str(e)
+				continue
+			
+			#save most recent tweets
+			alltweets.extend(new_tweets)
+			
+			#update the id of the oldest tweet less one
+			oldest = alltweets[-1].id - 1
+			
+			print "...%s tweets downloaded so far" % (len(alltweets))
+		
+		#transform the tweepy tweets into a 2D array that will populate the csv	
+		outtweets = [[tweet.user.id_str, tweet.user.screen_name, tweet.lang, tweet.id_str, tweet.created_at, tweet.text.encode("utf-8"), tweet.favorite_count, tweet.retweet_count] for tweet in alltweets]
+		writer.writerows(outtweets)
+		pass
+
+
+	def tagDataForTextMiningTask(self, diagnosed_users, writer, illness, illness2 = ''):
+		comorbid_bipolar = 0 # if bipolar and anxiety together
+		bipolar = 0 # only bipolar
+		comorbid_depression = 0 # if depression and anxiety
+		depression = 0 # only depression
+		filtered = []
+		userExists = []
+
+		"""
+		checks that illness name is not just a mention with # or @ meaning it is a user with a disease name
+		"""
+
+		for usr in diagnosed_users:
+			userText = usr['text'].lower()
+			if illness != '' and illness2 == '': # check for single disease based on illness param
+				otherDiseases = 0
+				isIllness = 0
+				for idx, value in enumerate(self.model.disease_list):
+					if value == illness and value in usr['text'].lower() and (userText[userText.index(value) - 1] != '@' or userText[userText.index(value) - 1] != '#'):
+						isIllness = 1
+					elif value != illness and value in usr['text'].lower() and (userText[userText.index(value) - 1] != '@' or userText[userText.index(value) - 1] != '#'):
+						otherDiseases = 1
+				if isIllness == 1 and otherDiseases == 0:
+					if usr['username'] not in userExists:
+						writer.writerow([usr['username'], usr['text']])
+						print '%s is %s' % (usr['username'], illness) # save to seperate file for each disease
+			elif illness != '' and illness2 != '': # check for comorbid disease based on both params
+				isIllness1 = 0
+				isIllness2 = 0
+				otherDiseases = 0
+				for idx, value in enumerate(self.model.disease_list):
+					if value == illness and value in usr['text'].lower() and (userText[userText.index(value) - 1] != '@' or userText[userText.index(value) - 1] != '#'):
+						isIllness1 = 1
+					elif value == illness2 and value in usr['text'].lower() and (userText[userText.index(value) - 1] != '@' or userText[userText.index(value) - 1] != '#'):
+						isIllness2 = 1
+					elif (value != illness or value != illness2 ) and value in usr['text'].lower() and (userText[userText.index(value) - 1] != '@' or userText[userText.index(value) - 1] != '#'):
+						otherDiseases = 1
+				if isIllness1 == 1 and isIllness2 == 1 and otherDiseases == 0:
+					if usr['username'] not in userExists:
+						writer.writerow([usr['username'], usr['text']])
+						print '%s is %s and %s' % (usr['username'], illness, illness2) # save to seperate file for each disease
+			userExists.append(usr['username'])
+		
+ 
 	def generataFrequencyMatrixBasedOnIllnessMentionsByUser(self, diagnosed_users, illness = ''):
 		"""
 		NOTE: http://www.linuxtopia.org/online_books/programming_books/python_programming/python_ch20s05.html
@@ -46,7 +156,6 @@ class StatsManager:
 		columns = 5
 		rows = 5
 		matrix = [[0 for i in range(rows)] for j in range(columns)] # build a 5 x 5 matrix
-
 
 		for usr in diagnosed_users:
 			BPD_check = 0
