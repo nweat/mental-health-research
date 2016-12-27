@@ -1,11 +1,12 @@
-try:
-	import json
-except ImportError:
-	import simplejson as json
-
+#try:
+#	import json
+#except ImportError:
+#	import simplejson as json
+import simplejson as json
 import datetime, tweepy, pprint, csv
 import numpy as np
 import pandas as pd
+import HTMLParser
 from pandas.io.json import json_normalize
 from collections import Counter
 from .. import models
@@ -48,20 +49,73 @@ class StatsManager:
 			return diagnosed_users[1:]
 		finally:
 			f.close()
-			
-	def getTweetsPerPartition(self, diagnosed_users, writer):
+
+	def getTweetsPerPartition(self, diagnosed_users, csv):
+		tweetsJSON = []
+		patientInfoJSON = []
+		userExists = []
+
 		for usr in diagnosed_users:
 			try:
+				#https://www.analyticsvidhya.com/blog/2014/11/text-data-cleaning-steps-python/
 				#make initial request for most recent tweets (200 is the maximum allowed count)
-				new_tweets = self.twitter.user_timeline(screen_name = usr, count=200)
-				print "User: %s\n" % (usr)
+				userObj = self.twitter.get_user(usr)
+				new_tweets = self.twitter.user_timeline(screen_name = usr, count = 200)
+				html_parser = HTMLParser.HTMLParser()
+				print "\nUser: %s-%s\n" % (userObj.screen_name,userObj.statuses_count)
 			except tweepy.TweepError as e:
 				print 'I just caught the exception: %s' % str(e)
 				continue
-			self.get_all_tweets(usr, new_tweets, writer)	
+			
+			if userObj.statuses_count >= 200: # only get users who have 200 or more tweets
+				tweets = self.get_all_tweets(usr, new_tweets, csv)
+				for tweet in tweets:
+					tweetText = html_parser.unescape(tweet.text)
+					tweetText = tweetText.encode("utf-8")
+					desc = tweet.user.description.encode("utf-8")
+
+					tweetsJSON.append({
+						'userID': tweet.user.id_str,
+						'userName': tweet.user.screen_name,
+						'tweetID': tweet.id_str,
+						'tweetLang': tweet.lang,
+						'tweetCreated': tweet.created_at,
+						'tweetText': tweetText,
+						'tweetFav': tweet.favorite_count,
+						'tweetRT': tweet.retweet_count,
+						'tweetEntities': tweet.entities,
+						'tweetPlace': tweet.place.country
+						})
+
+					if usr not in userExists:
+						patientInfoJSON.append({
+							'userID': tweet.user.id_str,
+							'userName': tweet.user.screen_name,
+							'userStatusCount': tweet.user.statuses_count,
+							'userDesc': desc,
+							'userCreated': tweet.user.created_at,
+							'userTimeZone': tweet.user.time_zone,
+							'userLocation': tweet.user.location,
+							'userFriends': tweet.user.friends_count,
+							'userFollowers': tweet.user.followers_count
+							})
+			userExists.append(usr)
+		return {'tweets': tweetsJSON, 'patientInfo': patientInfoJSON}
 
 
-	def get_all_tweets(self, screen_name, new_tweets, writer):
+	def timeStampAnalysis(self):
+		"""
+		http://beneathdata.com/how-to/email-behavior-analysis/
+		http://stackoverflow.com/questions/40489196/time-series-and-sentiment-analysis-with-pandas-timegrouper
+		https://m.reddit.com/r/learnpython/comments/5bsvip/time_series_with_pandas_timegrouper/
+		https://rawgit.com/ptwobrussell/Mining-the-Social-Web-2nd-Edition/master/ipynb/html/Chapter%201%20-%20Mining%20Twitter.html
+		http://blog.coderscrowd.com/twitter-hashtag-data-analysis-with-python/
+		group by times and get sentiment, times depression keywords posted	
+		"""
+		print 'to be implemented'
+
+
+	def get_all_tweets(self, screen_name, new_tweets, csv):
 		"""
 		https://gist.github.com/yanofsky/5436496
 		check that users are not duplicated, only get tweets once for a user
@@ -95,11 +149,11 @@ class StatsManager:
 			oldest = alltweets[-1].id - 1
 			
 			print "...%s tweets downloaded so far" % (len(alltweets))
-		
 		#transform the tweepy tweets into a 2D array that will populate the csv	
 		outtweets = [[tweet.user.id_str, tweet.user.screen_name, tweet.lang, tweet.id_str, tweet.created_at, tweet.text.encode("utf-8"), tweet.favorite_count, tweet.retweet_count] for tweet in alltweets]
-		writer.writerows(outtweets)
-		pass
+		csv.writerows(outtweets)
+		return alltweets
+
 
 
 	def tagDataForTextMiningTask(self, diagnosed_users, writer, illness, illness2 = ''):

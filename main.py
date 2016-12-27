@@ -22,6 +22,8 @@ def main(argv):
 	matrix = ''
 	partition = ''
 	patient_timeline = ''
+	jsonf = ''
+	jsonPatientInfo = ''
 	processed_diagnosed_users = []
 
 	config = open('config.yaml')
@@ -52,7 +54,7 @@ def main(argv):
 		stats_obj = data_manager.manager.StatsManager(api)
 		#normal_user_obj = data_manager.manager.NormalUsersManager(api, myStream)
 		
-		opts, args = getopt.getopt(argv, "", ("patient_timeline=","illness2=","partition=","ifile=","ifile2=","ifile3=","ifile4=","ifile5=","ofile=","stats=","illness=","normalusers=","pstats=","matrix="))
+		opts, args = getopt.getopt(argv, "", ("jsonPatientInfo=","jsonf=","patient_timeline=","illness2=","partition=","ifile=","ifile2=","ifile3=","ifile4=","ifile5=","ofile=","stats=","illness=","normalusers=","pstats=","matrix="))
 				
 		for opt,arg in opts:
 			if opt == '--ifile':
@@ -83,7 +85,11 @@ def main(argv):
 				illness2 = arg
 			elif opt == '--patient_timeline':
 				patient_timeline = arg
-				
+			elif opt == '--jsonf':
+				jsonf = arg
+			elif opt == '--jsonPatientInfo':
+				jsonPatientInfo = arg
+
 		if stats and illness:
 			# python main.py --ifile data_manager/data/diagnosed_users_in.csv --stats 1 --illness anxiety --ofile data_manager/data/out.json
 			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
@@ -122,6 +128,7 @@ def main(argv):
 
 		#################################################################PATIENTS TWEET ANALYSIS
 		#partition data focusing on bipolar, depression and with anxiety
+		#python main.py --ifile data_manager/data/diagnosed_users_in_depression.csv --partition 1 --illness 'depression' --illness2 'anxiety' --ofile depression_comorbid.csv
 		elif partition and illness:
 			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
 			f = open(ofile, 'wb')
@@ -135,18 +142,25 @@ def main(argv):
 			stats_obj.tagDataForTextMiningTask(diagnosed_users, writer, illness, illness2)
 			f.close()
         #
-		elif patient_timeline:
-			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv
-			# python main.py --ifile patient_tweet_analysis/bipolar_patients.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv
-			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
+		elif patient_timeline and jsonf and jsonPatientInfo:
+			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf patient_tweet_analysis/bipolar_comorbid_patient_tweets.json
+			# python main.py --ifile patient_tweet_analysis/bipolar_patients.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf
+			outputJSON = codecs.open(jsonf, "w+", "utf-8")
+			outputJSONPatientInfo = codecs.open(jsonPatientInfo, "w+", "utf-8")
 
-			f = open(ofile, 'wb')
-			writer = csv.writer(f) # quoting = csv.QUOTE_ALL
+			csv_output = open(ofile, 'wb')
+			writer = csv.writer(csv_output, quoting = csv.QUOTE_ALL)
 			writer.writerow(["userid","screeName","lang","tweetID","tweetCreated","tweetText","favorites","retweet"])
+			
 			print "\n******Extracting twitter users who made diagnosis statements******"  
 			diagnosed_users = stats_obj.getPatientNames(ifile)
-			stats_obj.getTweetsPerPartition(diagnosed_users, writer) 
-			f.close()
+			tweets = stats_obj.getTweetsPerPartition(diagnosed_users, writer) 
+			outputJSON.write(json.dumps(tweets['tweets'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
+			outputJSONPatientInfo.write(json.dumps(tweets['patientInfo'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
+			
+			csv_output.close() #csv format
+			outputJSON.close() #json format
+			outputJSONPatientInfo.close()
 
 		#################################################################BUILD MATRIX TO SEE COMORBID PATIENTS
 		elif matrix:
