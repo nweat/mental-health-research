@@ -54,51 +54,79 @@ class StatsManager:
 		tweetsJSON = []
 		patientInfoJSON = []
 		userExists = []
+		advocate_check = 0
+		page_list =[]
 
 		for usr in diagnosed_users:
+			for page in tweepy.Cursor(api.user_timeline, id=usr['username'], count=200).pages(16):
+				page_list.append(page)
+				n = n+1
+				print n
+
+			for page in page_list:
+				for status in page:
+					print status.text
+
+
+			advocate_check = 0
 			try:
 				#https://www.analyticsvidhya.com/blog/2014/11/text-data-cleaning-steps-python/
 				#make initial request for most recent tweets (200 is the maximum allowed count)
 				userObj = self.twitter.get_user(usr)
-				new_tweets = self.twitter.user_timeline(screen_name = usr, count = 200)
+
+				#check if advocate keywords found in description
+				for idx, value in enumerate(self.model.advocate_keywords):
+					if value in userObj.description.lower():
+						advocate_check += 1
+
+				if usr not in userExists:
+					#desc = userObj.description.encode("utf-8")
+					patientInfoJSON.append({
+						'userID': userObj.id_str,
+						'userName': userObj.screen_name,
+						'userStatusCount': userObj.statuses_count,
+						'userDesc': userObj.description,
+						'userLang': userObj.lang,
+						'userCreated': userObj.created_at,
+						'userTimeZone': userObj.time_zone,
+						'userLocation': userObj.location,
+						'userFriends': userObj.friends_count,
+						'userFollowers': userObj.followers_count,
+						'advocate': advocate_check
+						})
+				new_tweets = self.
+				.user_timeline(screen_name = usr, count = 200)
 				html_parser = HTMLParser.HTMLParser()
 				print "\nUser: %s-%s\n" % (userObj.screen_name,userObj.statuses_count)
 			except tweepy.TweepError as e:
 				print 'I just caught the exception: %s' % str(e)
 				continue
-			
-			if userObj.statuses_count >= 200: # only get users who have 200 or more tweets
+			# check MERRYJAUREGUl user to see if code works
+			if userObj.statuses_count >= 200 and advocate_check == 0:
 				tweets = self.get_all_tweets(usr, new_tweets, csv)
 				for tweet in tweets:
-					tweetText = html_parser.unescape(tweet.text)
-					tweetText = tweetText.encode("utf-8")
-					desc = tweet.user.description.encode("utf-8")
 
-					tweetsJSON.append({
-						'userID': tweet.user.id_str,
-						'userName': tweet.user.screen_name,
-						'tweetID': tweet.id_str,
-						'tweetLang': tweet.lang,
-						'tweetCreated': tweet.created_at,
-						'tweetText': tweetText,
-						'tweetFav': tweet.favorite_count,
-						'tweetRT': tweet.retweet_count,
-						'tweetEntities': tweet.entities,
-						'tweetPlace': tweet.place.country
-						})
-
-					if usr not in userExists:
-						patientInfoJSON.append({
+					try:
+						tweetText = html_parser.unescape(tweet.text)
+						#tweetText = tweetText.decode('utf-8').strip()
+						tweetsJSON.append({
 							'userID': tweet.user.id_str,
 							'userName': tweet.user.screen_name,
-							'userStatusCount': tweet.user.statuses_count,
-							'userDesc': desc,
-							'userCreated': tweet.user.created_at,
-							'userTimeZone': tweet.user.time_zone,
-							'userLocation': tweet.user.location,
-							'userFriends': tweet.user.friends_count,
-							'userFollowers': tweet.user.followers_count
+							'tweetID': tweet.id_str,
+							'tweetLang': tweet.lang,
+							'tweetCreated': tweet.created_at,
+							'tweetText': tweetText,
+							'tweetFav': tweet.favorite_count,
+							'tweetRT': tweet.retweet_count,
+							'tweetEntities': tweet.entities,
+							'tweetPlace': tweet.place,
+							'tweetCoord': tweet.coordinates # fix
 							})
+					except Exception as e:
+						continue
+			else:
+				print "Too little tweets or this person could be advocate..check patient info file\n"
+
 			userExists.append(usr)
 		return {'tweets': tweetsJSON, 'patientInfo': patientInfoJSON}
 
@@ -163,12 +191,20 @@ class StatsManager:
 		depression = 0 # only depression
 		filtered = []
 		userExists = []
+		patientIds = []
 
 		"""
 		checks that illness name is not just a mention with # or @ meaning it is a user with a disease name
 		"""
 
 		for usr in diagnosed_users:
+			try:
+				userObj = self.twitter.get_user(usr['username'])
+				patientIds.append(userObj.id_str)
+			except tweepy.TweepError as e:
+				print 'I just caught the exception: %s' % str(e)
+				continue
+
 			userText = usr['text'].lower()
 			if illness != '' and illness2 == '': # check for single disease based on illness param
 				otherDiseases = 0
@@ -198,6 +234,7 @@ class StatsManager:
 						writer.writerow([usr['username'], usr['text']])
 						print '%s is %s and %s' % (usr['username'], illness, illness2) # save to seperate file for each disease
 			userExists.append(usr['username'])
+		return patientIds
 		
  
 	def generataFrequencyMatrixBasedOnIllnessMentionsByUser(self, diagnosed_users, illness = ''):
