@@ -13,41 +13,31 @@ library(dplyr)
 library(grid)
 library(gridExtra)
 
-#SAMPLE TWEET CREATED DATE FORMAT:: 2016-12-28 05:38:01
 tweets = read.csv("bipolar_patients_tweets.csv", header = TRUE)
-tweets$tweetCreated = ymd_hms(tweets$tweetCreated)
-tweets$tweetCreated = with_tz(tweets$tweetCreated, "America/New_York")
+tweets$tweetCreated <- ymd_hms(tweets$tweetCreated)
+tweets$tweetCreated <- with_tz(tweets$tweetCreated, "America/New_York")
+tweets$clean_text <- str_replace_all(tweets$tweetText, "@\\w+", "") # remove mentions
+Sentiment <- get_nrc_sentiment(tweets$clean_text)
+alltweets_senti <- cbind(tweets, Sentiment)
 
+sentimentTotals <- data.frame(colSums(alltweets_senti[,c(11:18)]))
+names(sentimentTotals) <- "count"
+sentimentTotals <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
+rownames(sentimentTotals) <- NULL
 
-#TWEETS DATE ANALYSIS: Which days, month, time of day tweet more?
+sentimentTotals
 
-p1 = ggplot(data = tweets, aes(x = month(tweetCreated, label = TRUE))) +
-  geom_bar(aes(fill = ..count..)) +
+ggplot(data = sentimentTotals, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
   theme(legend.position = "none") +
-  xlab("Month") + ylab("Number of tweets") +
-  scale_fill_gradient(low = "midnightblue", high = "aquamarine4")
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for All Tweets")
 
-p2 = ggplot(data = tweets, aes(x = wday(tweetCreated, label = TRUE))) +
-  geom_bar(aes(fill = ..count..)) +
-  theme(legend.position = "none") +
-  xlab("Day of the Week") + ylab("Number of tweets") + 
-  scale_fill_gradient(low = "midnightblue", high = "aquamarine4")
 
-tweets$timeonly = as.numeric(tweets$tweetCreated - trunc(tweets$tweetCreated, "days"))
-class(tweets$timeonly) <- "POSIXct"
 
-p3 = ggplot(data = tweets, aes(x = timeonly)) +
-  geom_histogram(aes(fill = ..count..)) +
-  theme(legend.position = "none") +
-  xlab("Time") + ylab("Number of tweets") + 
-  scale_x_datetime(breaks = date_breaks("2 hours"), 
-                   labels = date_format("%H:00")) +
-  scale_fill_gradient(low = "midnightblue", high = "aquamarine4")
 
-grid.newpage()
-pushViewport(viewport(layout = grid.layout(3, 1)))
-vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
-print(p1, vp = vplayout(1, 1))  # key is to define vplayout
-print(p2, vp = vplayout(2, 1))
-print(p3, vp = vplayout(3, 1))
+#grid.newpage()
+#pushViewport(viewport(layout = grid.layout(3, 3)))
+#vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+#print(p1, vp = vplayout(1, 3))  # key is to define vplayout
+
 
