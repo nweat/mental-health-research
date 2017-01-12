@@ -1,4 +1,4 @@
-import datetime
+import datetime, tweepy
 from .. import models
 
 class HelperManager:
@@ -31,6 +31,24 @@ class HelperManager:
 			for idx, value in enumerate(self.model.depression_keywords):
 				if value in ((description).lower() or (screen_name).lower()):
 					DepressionRefDesc += 1
+
+			for user in tweepy.Cursor(self.twitter.followers, screen_name = screeName).items(limit):
+				try:
+					if self.helper.criteria_normal_user_selection(user.statuses_count, user.description, user.screen_name, user.lang, user.id_str, ids) == 1:
+					ids.append(user.screen_name)
+				except tweepy.TweepError as e:
+					print 'I just caught the exception: %s' % str(e)
+					continue
+
+
+
+			try:
+				for page in tweepy.Cursor(self.twitter.user_timeline, id=usr, count=200).pages(16):
+					page_list.append(page)
+			except tweepy.TweepError as e:
+				print 'I just caught the exception: %s' % str(e)
+				#continue
+				
 
 		if existing_id != 'null':
 			if (id not in existing_id) and status_count >= 200 and DiseaseRefDesc == 0 and AdvocateRefDesc == 0 and DepressionRefDesc == 0 and lang == 'en':

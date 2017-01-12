@@ -1,4 +1,5 @@
 config.yaml
+data_manager/data/*
 patient_tweet_analysis/bipolar/*
 patient_tweet_analysis/bipolar_comorbid/*
 patient_tweet_analysis/depression/*
