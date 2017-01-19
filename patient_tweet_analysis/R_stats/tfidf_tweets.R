@@ -14,19 +14,24 @@ library(SnowballC)
 library(wordcloud)
 library(rjson)
 library(stringr)
+library(grid)
+library(gridExtra)
 
 #custom tweet cleaning
 #removeURL <- function(x) gsub("http[[:alnum:]]*", "", x)
 
-tweets = read.csv("bipolar_patients_tweets.csv", header = TRUE)
+tweets = read.csv("D:\\twitter-mental-health-research\\mental-health-research\\patient_tweet_analysis\\bipolar\\bipolar_tweets.csv", header = TRUE)
 #tweets = fromJSON(file = "bipolar_comorbid_patient_tweets.json" )
 review_corpus = Corpus(VectorSource(tweets$tweetText)) #readerControl = list(blank.lines.skip=TRUE
-#review_corpus = tm_map(review_corpus, content_transformer(tolower))
+review_corpus = tm_map(review_corpus, PlainTextDocument)   
+review_corpus = tm_map(review_corpus, content_transformer(tolower))
 #review_corpus = tm_map(review_corpus, removeURL)
 #review_corpus = tm_map(review_corpus, removeNumbers)
-#review_corpus = tm_map(review_corpus, removePunctuation)
-review_corpus = tm_map(review_corpus, removeWords, c("the", "and", stopwords("english")))
-#review_corpus = tm_map(review_corpus, stripWhitespace)
+review_corpus = tm_map(review_corpus, removePunctuation)
+review_corpus = tm_map(review_corpus, removeWords, c('the', 'this', stopwords("english")))
+review_corpus = tm_map(review_corpus, stemDocument)   
+review_corpus = tm_map(review_corpus, stripWhitespace)
+
 #inspect(review_corpus[1])
 #dataframe = data.frame(text=unlist(sapply(review_corpus, `[`, "content")), stringsAsFactors=F)
 #dataframe
@@ -34,4 +39,14 @@ review_dtm_tfidf = DocumentTermMatrix(review_corpus, control = list(weighting = 
 #review_dtm_tfidf = removeSparseTerms(review_dtm_tfidf, 0.95)
 review_dtm_tfidf
 freq = data.frame(sort(colSums(as.matrix(review_dtm_tfidf)), decreasing=TRUE))
-wordcloud(rownames(freq), freq[,1], max.words=100, colors=brewer.pal(1, "Dark2"))
+wordcloud(rownames(freq), freq[,1], max.words=200, random.order = FALSE, colors=brewer.pal(1, "Dark2"))
+
+
+
+#Frequency
+#review_dtm_freq = DocumentTermMatrix(review_corpus)
+#freq2 = data.frame(sort(colSums(as.matrix(review_dtm_freq)), decreasing=TRUE))
+#wordcloud(rownames(freq2), freq2[,1], max.words=100, random.order = FALSE, colors=brewer.pal(1, "Dark2"))
+
+
+

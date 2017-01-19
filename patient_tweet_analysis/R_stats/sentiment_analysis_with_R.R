@@ -13,19 +13,30 @@ library(dplyr)
 library(grid)
 library(gridExtra)
 
-tweets = read.csv("bipolar_patients_tweets.csv", header = TRUE)
+tweets = read.csv("D:\\twitter-mental-health-research\\mental-health-research\\patient_tweet_analysis\\bipolar\\bipolar_tweets.csv", header = TRUE)
 tweets$tweetCreated <- ymd_hms(tweets$tweetCreated)
 tweets$tweetCreated <- with_tz(tweets$tweetCreated, "America/New_York")
 tweets$clean_text <- str_replace_all(tweets$tweetText, "@\\w+", "") # remove mentions
 Sentiment <- get_nrc_sentiment(tweets$clean_text)
 alltweets_senti <- cbind(tweets, Sentiment)
+alltweets_senti <- alltweets_senti %>% group_by(username,tweetCreated) %>% summarise(
+  anticipation = sum(anticipation),
+  disgust = sum(disgust),
+  fear = sum(fear),
+  joy = sum(joy),
+  sadness = sum(sadness),
+  surprise = sum(surprise),
+  trust = sum(trust),
+  negative = sum(negative),
+  positive = sum(positive)
+  )
 
-sentimentTotals <- data.frame(colSums(alltweets_senti[,c(11:18)]))
+alltweets_senti
+
+sentimentTotals <- data.frame(colSums(alltweets_senti[,c(3:11)]))
 names(sentimentTotals) <- "count"
 sentimentTotals <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
 rownames(sentimentTotals) <- NULL
-
-sentimentTotals
 
 ggplot(data = sentimentTotals, aes(x = sentiment, y = count)) +
   geom_bar(aes(fill = sentiment), stat = "identity") +
