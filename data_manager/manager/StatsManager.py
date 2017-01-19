@@ -3,10 +3,11 @@
 #except ImportError:
 #	import simplejson as json
 import simplejson as json
-import datetime, tweepy, pprint, csv
+import datetime, tweepy, pprint, csv, re, sqlite3
 import numpy as np
 import pandas as pd
 import HTMLParser
+import time
 from pandas.io.json import json_normalize
 from collections import Counter
 from .. import models
@@ -50,85 +51,95 @@ class StatsManager:
 		finally:
 			f.close()
 
-	def getTweetsPerPartition(self, diagnosed_users, csv):
+
+	def createTweetRecords(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9):
+		sql = '''INSERT INTO ''' + table + '''_tweets VALUES(?,?,?,?,?,?,?,?,?)'''
+
+		try:
+			cur = conn.cursor()
+			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9))
+			conn.commit()
+		except sqlite3.Error as er:
+			print(er)
+
+
+	def createPatientRecord(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11):
+		sql = '''INSERT INTO ''' + table + '''_patients VALUES(?,?,?,?,?,?,?,?,?,?,?)'''
+
+		try:
+			cur = conn.cursor()
+			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11))
+			conn.commit()
+		except sqlite3.Error as er:
+			print(er)
+
+
+	def getTweetsPerPartition(self, diagnosed_users, conn, illness):
 		tweetsJSON = []
 		patientInfoJSON = []
 		userExists = []
-		advocate_check = 0
-		page_list =[]
+		#advocate_check = 0
+		
 
 		for usr in diagnosed_users:
-			for page in tweepy.Cursor(api.user_timeline, id=usr['username'], count=200).pages(16):
-				page_list.append(page)
-				n = n+1
-				print n
-
-			for page in page_list:
-				for status in page:
-					print status.text
-
-
 			advocate_check = 0
+			page_list = []
 			try:
-				#https://www.analyticsvidhya.com/blog/2014/11/text-data-cleaning-steps-python/
-				#make initial request for most recent tweets (200 is the maximum allowed count)
-				userObj = self.twitter.get_user(usr)
+				for page in tweepy.Cursor(self.twitter.user_timeline, id=usr, count=200).pages(16):
+					page_list.append(page)
 
-				#check if advocate keywords found in description
-				for idx, value in enumerate(self.model.advocate_keywords):
-					if value in userObj.description.lower():
-						advocate_check += 1
-
-				if usr not in userExists:
-					#desc = userObj.description.encode("utf-8")
-					patientInfoJSON.append({
-						'userID': userObj.id_str,
-						'userName': userObj.screen_name,
-						'userStatusCount': userObj.statuses_count,
-						'userDesc': userObj.description,
-						'userLang': userObj.lang,
-						'userCreated': userObj.created_at,
-						'userTimeZone': userObj.time_zone,
-						'userLocation': userObj.location,
-						'userFriends': userObj.friends_count,
-						'userFollowers': userObj.followers_count,
-						'advocate': advocate_check
-						})
-				new_tweets = self.
-				.user_timeline(screen_name = usr, count = 200)
-				html_parser = HTMLParser.HTMLParser()
-				print "\nUser: %s-%s\n" % (userObj.screen_name,userObj.statuses_count)
 			except tweepy.TweepError as e:
 				print 'I just caught the exception: %s' % str(e)
 				continue
-			# check MERRYJAUREGUl user to see if code works
-			if userObj.statuses_count >= 200 and advocate_check == 0:
-				tweets = self.get_all_tweets(usr, new_tweets, csv)
-				for tweet in tweets:
+			
+			print '\nGetting tweets for - %s' % usr
+			print '%d pages' % len(page_list)
 
-					try:
-						tweetText = html_parser.unescape(tweet.text)
-						#tweetText = tweetText.decode('utf-8').strip()
-						tweetsJSON.append({
-							'userID': tweet.user.id_str,
-							'userName': tweet.user.screen_name,
-							'tweetID': tweet.id_str,
-							'tweetLang': tweet.lang,
-							'tweetCreated': tweet.created_at,
-							'tweetText': tweetText,
-							'tweetFav': tweet.favorite_count,
-							'tweetRT': tweet.retweet_count,
-							'tweetEntities': tweet.entities,
-							'tweetPlace': tweet.place,
-							'tweetCoord': tweet.coordinates # fix
-							})
-					except Exception as e:
-						continue
-			else:
-				print "Too little tweets or this person could be advocate..check patient info file\n"
+			if len(page_list) >= 2:
+				for page in page_list:
+					tweetcount = 0
+					for tweet in page:
+						tweetcount += 1
+						if usr not in userExists: # save patient info once
+							for idx, value in enumerate(self.model.advocate_keywords):
+								if value in tweet.user.description.lower():
+									advocate_check += 1
+							self.createPatientRecord(conn,illness,
+								tweet.user.id_str,
+								tweet.user.screen_name,
+								tweet.user.description,
+								tweet.user.created_at,
+								tweet.user.lang,
+								tweet.user.time_zone,
+								tweet.user.location,
+								int(tweet.user.statuses_count),
+								int(tweet.user.friends_count),
+								int(tweet.user.followers_count),
+								advocate_check
+								)
+							userExists.append(usr)
 
-			userExists.append(usr)
-		return {'tweets': tweetsJSON, 'patientInfo': patientInfoJSON}
+						text = tweet.text.encode('ascii', 'ignore')
+						html_parser = HTMLParser.HTMLParser()
+						text = html_parser.unescape(text)
+
+						mentions = " ".join(re.compile('(@\\w*)').findall(text))
+						hashtags = " ".join(re.compile('(#\\w*)').findall(text)).lower()
+						self.createTweetRecords(conn,illness,
+							tweet.user.id_str,
+							tweet.user.screen_name,
+							tweet.created_at,
+							tweet.lang,
+							tweet.text,
+							hashtags,
+							mentions,
+							int(tweet.favorite_count),
+							int(tweet.retweet_count)
+							)
+					print '\nTweets saved - %d' % tweetcount
+
+		conn.close()	
+		#return {'tweets': tweetsJSON, 'patientInfo': patientInfoJSON}
 
 
 	def timeStampAnalysis(self):

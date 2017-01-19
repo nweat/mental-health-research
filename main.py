@@ -5,7 +5,18 @@ try:
 except ImportError:
 	import simplejson as json
 
-import data_manager,sys,getopt,codecs,tweepy,yaml,os,os.path,csv
+import data_manager,sys,getopt,codecs,tweepy,yaml,os,os.path,csv,sqlite3
+
+
+def createConnection(db_file):
+	try:
+		conn = sqlite3.connect(db_file)
+		return conn
+	except sqlite3.Error as er:
+		print(er)
+ 
+	return None
+	
 
 def main(argv):
 	ifile = ''
@@ -141,26 +152,29 @@ def main(argv):
 				inputFile.close()
 			stats_obj.tagDataForTextMiningTask(diagnosed_users, writer, illness, illness2)
 			f.close()
-        #
-		elif patient_timeline and jsonf and jsonPatientInfo:
-			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf patient_tweet_analysis/bipolar_comorbid_patient_tweets.json
-			# python main.py --ifile patient_tweet_analysis/bipolar_patients.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf
-			outputJSON = codecs.open(jsonf, "w+", "utf-8")
-			outputJSONPatientInfo = codecs.open(jsonPatientInfo, "w+", "utf-8")
+		#
+		elif patient_timeline and illness: # and jsonf and jsonPatientInfo
+			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf patient_tweet_analysis/bipolar_comorbid_patient_tweets.json
+			# python main.py --ifile patient_tweet_analysis/bipolar/bipolar_patients.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf
+			
+			#outputJSON = codecs.open(jsonf, "w+", "utf-8")
+			#outputJSONPatientInfo = codecs.open(jsonPatientInfo, "w+", "utf-8")
 
-			csv_output = open(ofile, 'wb')
-			writer = csv.writer(csv_output, quoting = csv.QUOTE_ALL)
-			writer.writerow(["userid","screeName","lang","tweetID","tweetCreated","tweetText","favorites","retweet"])
-			
-			print "\n******Extracting twitter users who made diagnosis statements******"  
+			#csv_output = open(ofile, 'wb')
+			#writer = csv.writer(csv_output, quoting = csv.QUOTE_ALL)
+			#writer.writerow(["userid","screeName","lang","tweetID","tweetCreated","tweetText","favorites","retweet"])
+
+			conn = createConnection('data_manager/data/sqlite/patient_tweets.sqlite')
+			print "\n******Processing patient timelines******"  
 			diagnosed_users = stats_obj.getPatientNames(ifile)
-			tweets = stats_obj.getTweetsPerPartition(diagnosed_users, writer) 
-			outputJSON.write(json.dumps(tweets['tweets'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
-			outputJSONPatientInfo.write(json.dumps(tweets['patientInfo'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
+			stats_obj.getTweetsPerPartition(diagnosed_users, conn, illness) 
+
+			#outputJSON.write(json.dumps(tweets['tweets'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
+			#outputJSONPatientInfo.write(json.dumps(tweets['patientInfo'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
 			
-			csv_output.close() #csv format
-			outputJSON.close() #json format
-			outputJSONPatientInfo.close()
+			#csv_output.close() #csv format
+			#outputJSON.close() #json format
+			#outputJSONPatientInfo.close()
 
 		#################################################################BUILD MATRIX TO SEE COMORBID PATIENTS
 		elif matrix:
