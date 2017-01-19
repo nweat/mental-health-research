@@ -3,4 +3,4 @@ patient_tweet_analysis/bipolar/*
 patient_tweet_analysis/bipolar_comorbid/*
 patient_tweet_analysis/depression/*
 patient_tweet_analysis/depression_comorbid/*
-
+*.pyc
