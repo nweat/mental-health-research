@@ -20,15 +20,15 @@ library(gridExtra)
 #custom tweet cleaning
 #removeURL <- function(x) gsub("http[[:alnum:]]*", "", x)
 
-tweets = read.csv("D:\\twitter-mental-health-research\\mental-health-research\\patient_tweet_analysis\\depression_comorbid\\depression_comorbid_patients.csv", header = TRUE)
+tweets = read.csv("D:\\twitter-mental-health-research\\mental-health-research\\patient_tweet_analysis\\depression\\depression_tweets_extracted_200common_words_per_user.csv", header = TRUE)
 #tweets = fromJSON(file = "bipolar_comorbid_patient_tweets.json" )
-review_corpus = Corpus(VectorSource(tweets$desc)) #readerControl = list(blank.lines.skip=TRUE
+review_corpus = Corpus(VectorSource(tweets$freqhashtags)) #readerControl = list(blank.lines.skip=TRUE
 review_corpus = tm_map(review_corpus, PlainTextDocument)   
 review_corpus = tm_map(review_corpus, content_transformer(tolower))
 #review_corpus = tm_map(review_corpus, removeURL)
 #review_corpus = tm_map(review_corpus, removeNumbers)
 review_corpus = tm_map(review_corpus, removePunctuation)
-review_corpus = tm_map(review_corpus, removeWords, c('the', 'this', stopwords("english")))
+review_corpus = tm_map(review_corpus, removeWords, c('the','make','year','tweet', 'this', 'use', 'guy', 'girl','ive','get','dont','say', stopwords("english")))
 review_corpus = tm_map(review_corpus, stemDocument)   
 review_corpus = tm_map(review_corpus, stripWhitespace)
 
@@ -36,21 +36,22 @@ review_corpus = tm_map(review_corpus, stripWhitespace)
 #dataframe = data.frame(text=unlist(sapply(review_corpus, `[`, "content")), stringsAsFactors=F)
 #dataframe
 review_dtm_tfidf = DocumentTermMatrix(review_corpus, control = list(weighting = weightTfIdf))
-#review_dtm_tfidf = removeSparseTerms(review_dtm_tfidf, 0.95)
+review_dtm_tfidf = removeSparseTerms(review_dtm_tfidf, 0.95) # remove less frequent words
 review_dtm_tfidf
-freq = data.frame(sort(colSums(as.matrix(review_dtm_tfidf)), decreasing=TRUE))
-wordcloud(rownames(freq), freq[,1], max.words=200, random.order = FALSE, colors=brewer.pal(1, "Dark2"))
+freq = data.frame(sort(colSums(as.matrix(review_dtm_tfidf)), decreasing=TRUE)) 
+wordcloud(rownames(freq), freq[,1], random.order = FALSE, colors=brewer.pal(1, "Dark2"))# max.words=100, #random.order = FALSE
 
 
 
 #Frequency
-#review_dtm_freq = DocumentTermMatrix(review_corpus)
-#freq2 = data.frame(sort(colSums(as.matrix(review_dtm_freq)), decreasing=TRUE))
-#wordcloud(rownames(freq2), freq2[,1], max.words=100, random.order = FALSE, colors=brewer.pal(1, "Dark2"))
+review_dtm_freq = DocumentTermMatrix(review_corpus)
+review_dtm_freq = removeSparseTerms(review_dtm_freq, 0.95) 
+freq2 = data.frame(sort(colSums(as.matrix(review_dtm_freq)), decreasing=TRUE))
+#wordcloud(rownames(freq2), freq2[,1], random.order = FALSE, colors=brewer.pal(1, "Dark2")) #max.words=100,
 
 
 #to generate:
 #frequency_patients_description.png
-#tfidf_patient_description.png #without sparse terms
-#tfidf_patients_description_less0.95_sparsity_setting.png #with sparse terms
+#tfidf_patient_description.png #with sparse terms
+#tfidf_patients_description_less0.95_sparsity_setting.png #without sparse terms
 

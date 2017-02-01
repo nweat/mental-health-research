@@ -70,7 +70,7 @@ def process_csv(filename):
  
     
     # for each unique user get frequent words from their tweets
-    f = open('bipolar_comorbid_tweets_extracted_200common_words_per_user.csv', 'wb')
+    f = open('depression_comorbid_tweets_extracted_200common_words_per_user.csv', 'wb')
     writer = csv.writer(f, quoting=csv.QUOTE_ALL)
     writer.writerow(["username","freqwords","freqhashtags","freqmentions"])
     for usr in uniqueUsers:
@@ -84,9 +84,9 @@ def process_csv(filename):
         for row in rows:
             if row['username'] == usr:
                 #terms_all = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term not in stop]
-                terms_hash = [term for term in preprocess(row['tweetText'].lower()) if term.startswith('#')]
-                terms_mentions = [term for term in preprocess(row['tweetText'].lower()) if term.startswith('@')]
-                terms_only = [term for term in preprocess(row['tweetText'].lower()) if term not in stop and not term.startswith(('#', '@'))] #.decode('unicode_escape').encode('ascii','ignore')
+                terms_hash = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term.startswith('#')]
+                terms_mentions = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term.startswith('@')]
+                terms_only = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term not in stop and not term.startswith(('#', '@'))] #.decode('unicode_escape').encode('ascii','ignore')
                 terms_only = set(terms_only)
                 terms_hash = set(terms_hash)
                 terms_mentions = set(terms_mentions)
@@ -110,7 +110,7 @@ def main():
 
     # get a list of file names
     #files = os.listdir('.')
-    file_list = ['bipolar_comorbid/bipolar_comorbid_tweets.csv']
+    file_list = ['depression_comorbid/depression_comorbid_tweets.csv']
 
     #for f in file_list:
       # process_csv(f)
