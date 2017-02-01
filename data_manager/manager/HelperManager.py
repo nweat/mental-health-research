@@ -32,10 +32,9 @@ class HelperManager:
 				if value in ((description).lower() or (screen_name).lower()):
 					DepressionRefDesc += 1
 
-			for user in tweepy.Cursor(self.twitter.followers, screen_name = screeName).items(limit):
+			for user in tweepy.Cursor(self.twitter.followers, screen_name = screen_name).items(limit):
 				try:
-					if self.helper.criteria_normal_user_selection(user.statuses_count, user.description, user.screen_name, user.lang, user.id_str, ids) == 1:
-					ids.append(user.screen_name)
+					
 				except tweepy.TweepError as e:
 					print 'I just caught the exception: %s' % str(e)
 					continue

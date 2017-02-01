@@ -206,6 +206,7 @@ class StatsManager:
 
 		"""
 		checks that illness name is not just a mention with # or @ meaning it is a user with a disease name
+		eg. @depression or #depression
 		"""
 
 		for usr in diagnosed_users:
