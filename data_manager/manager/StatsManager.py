@@ -2,6 +2,7 @@
 #	import json
 #except ImportError:
 #	import simplejson as json
+from __future__ import division
 import simplejson as json
 import datetime, tweepy, pprint, csv, re, sqlite3
 import numpy as np
@@ -13,6 +14,10 @@ from collections import Counter
 from .. import models
 
 class StatsManager:
+	"""
+	Primarily for data extraction using Twitter API and preliminary data labeling and exploration 
+
+	"""
 	
 	def __init__(self, twitter):
 		self.model = models.Keywords()
@@ -41,34 +46,52 @@ class StatsManager:
 	@staticmethod
 	def getPatientNames(file):
 		diagnosed_users = []
-
+		#comma delimited file - Get old tweets
+		
 		f = open(file, 'rt')
 		try:
-			reader = csv.reader(f)
+			reader = csv.reader(f,delimiter=',')
 			for row in reader:
-				diagnosed_users.append(row[0])
+				diagnosed_users.append({
+					'username':row[0], 
+					'text':row[1],
+					'date':row[2],
+					})
 			return diagnosed_users[1:]
 		finally:
 			f.close()
+		
+
+		#tab delimited file - portal users
+		"""
+		f = open(file, 'rt')
+		try:
+			reader = csv.reader(f,delimiter='\t')
+			for row in reader:
+				diagnosed_users.append(row[1][1:])
+			return diagnosed_users#[1:]
+		finally:
+			f.close()
+		"""
 
 
-	def createTweetRecords(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9):
-		sql = '''INSERT INTO ''' + table + '''_tweets VALUES(?,?,?,?,?,?,?,?,?)'''
+	def createTweetRecords(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13):
+		sql = '''INSERT INTO ''' + table + '''_tweets VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)'''
 
 		try:
 			cur = conn.cursor()
-			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9))
+			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13))
 			conn.commit()
 		except sqlite3.Error as er:
 			print(er)
 
 
-	def createPatientRecord(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11):
-		sql = '''INSERT INTO ''' + table + '''_patients VALUES(?,?,?,?,?,?,?,?,?,?,?)'''
+	def createPatientRecord(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18):
+		sql = '''INSERT INTO ''' + table + '''_patients VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''
 
 		try:
 			cur = conn.cursor()
-			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11))
+			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18))
 			conn.commit()
 		except sqlite3.Error as er:
 			print(er)
@@ -77,69 +100,142 @@ class StatsManager:
 	def getTweetsPerPartition(self, diagnosed_users, conn, illness):
 		tweetsJSON = []
 		patientInfoJSON = []
-		userExists = []
-		#advocate_check = 0
-		
+		userExists = []	
+		comorbid_disease = 'anxiety'
+		bipolar1_mention = ['bipolar i', 'bipolar 1']
+		bipolar2_mention = ['bipolar ii', 'bipolar 2']	
 
 		for usr in diagnosed_users:
+			usrname = usr['username']
+			userText = usr['text']
 			advocate_check = 0
+			comorbidity_check = 0 #if mentions of anxiety
+			bipolar1_check = 0
+			bipolar2_check = 0
+			total_tweets = 0
+			total_urls = 0
+			exact_match_diagnosis = 1
+
 			page_list = []
 			try:
-				for page in tweepy.Cursor(self.twitter.user_timeline, id=usr, count=200).pages(16):
+				for page in tweepy.Cursor(self.twitter.user_timeline, id=usrname, count=200).pages(16):
 					page_list.append(page)
 
 			except tweepy.TweepError as e:
 				print 'I just caught the exception: %s' % str(e)
 				continue
 			
-			print '\nGetting tweets for - %s' % usr
+			print '\nGetting tweets for - %s' % usrname
 			print '%d pages' % len(page_list)
 
-			if len(page_list) >= 2:
+			if len(page_list) >= 2: # only save tweets if user has over 200 tweets
 				for page in page_list:
 					tweetcount = 0
 					for tweet in page:
 						tweetcount += 1
-						if usr not in userExists: # save patient info once
-							for idx, value in enumerate(self.model.advocate_keywords):
-								if value in tweet.user.description.lower():
-									advocate_check += 1
-							self.createPatientRecord(conn,illness,
-								tweet.user.id_str,
-								tweet.user.screen_name,
-								tweet.user.description,
-								tweet.user.created_at,
-								tweet.user.lang,
-								tweet.user.time_zone,
-								tweet.user.location,
-								int(tweet.user.statuses_count),
-								int(tweet.user.friends_count),
-								int(tweet.user.followers_count),
-								advocate_check
-								)
-							userExists.append(usr)
-
+						total_tweets += 1
+						#if usr not in userExists: # save patient info once
+							#userExists.append(usr)
+	
 						text = tweet.text.encode('ascii', 'ignore')
 						html_parser = HTMLParser.HTMLParser()
 						text = html_parser.unescape(text)
 
+						if len(re.findall(r'(https?://\S+)', text)) > 0: # if atleast 1 url in tweet
+							total_urls += 1
+
 						mentions = " ".join(re.compile('(@\\w*)').findall(text))
 						hashtags = " ".join(re.compile('(#\\w*)').findall(text)).lower()
-						self.createTweetRecords(conn,illness,
-							tweet.user.id_str,
-							tweet.user.screen_name,
-							tweet.created_at,
-							tweet.lang,
-							tweet.text,
-							hashtags,
-							mentions,
-							int(tweet.favorite_count),
-							int(tweet.retweet_count)
-							)
+						lat = 'NaN'
+						lon = 'NaN'
+						countryCode = ''
+
+						if tweet.coordinates != None:
+							lon = tweet.coordinates['coordinates'][0] #long
+							lat = tweet.coordinates['coordinates'][1] #lat
+
+						if tweet.place != None:
+							countryCode = tweet.place.country_code
+
+					
+						try:				
+							self.createTweetRecords(conn,illness,
+								tweet.user.id_str,
+								tweet.user.screen_name,
+								tweet.created_at,
+								tweet.lang if tweet and tweet.lang else 'null',
+								tweet.text,
+								hashtags,
+								mentions,
+								int(tweet.favorite_count),
+								int(tweet.retweet_count),
+								lat,
+								lon,
+								tweet.user.location,
+								countryCode
+								)
+						except Exception as e:
+							print(e) 
+							continue
+						
 					print '\nTweets saved - %d' % tweetcount
+					
+
+				for idx, value in enumerate(self.model.advocate_keywords):
+					if value in tweet.user.description.lower():
+						advocate_check += 1
+
+				if comorbid_disease in userText.lower().split(): # and (userText[userText.index(comorbid_disease) - 1] != '@' or userText[userText.index(comorbid_disease) - 1] != '#'):
+					comorbidity_check += 1
+
+				for idx, value in enumerate(bipolar1_mention):
+					if value in userText.lower():
+						bipolar1_check += 1
+
+				for idx, value in enumerate(bipolar2_mention):
+					if value in userText.lower():
+						bipolar2_check += 1
+
+				match_criteria1 = re.search(r'i was diagnosed with bipolar', userText.lower())
+				match_criteria2 = re.search(r'i was diagnosed', userText.lower())
+				if match_criteria1 == None or match_criteria2 == None:
+					exact_match_diagnosis = 0
+
+				try:
+					userObj = self.twitter.get_user(usrname)
+				except tweepy.TweepError as e:
+					print 'I just caught the exception: %s' % str(e)
+					continue
+
+				perc_urls = round(((total_urls/float(total_tweets)))*100,2) if total_tweets > 0 else 'NaN' 
+				print "user: %s total_tweets: %s bipolar1: %s anxiety: %s total_urls: %d total_tweets: %d perc_urls: %s" % (usrname, total_tweets, bipolar1_check, comorbidity_check, total_urls, total_tweets, perc_urls)
+				
+				try:				
+					self.createPatientRecord(conn,illness,
+						userObj.id_str,
+						userObj.screen_name,
+						userObj.description,
+						userObj.created_at,
+						userObj.lang,
+						userObj.time_zone,
+						userObj.location,
+						int(userObj.statuses_count),
+						int(userObj.friends_count),
+						int(userObj.followers_count),
+						advocate_check,
+						usr['date'],
+						comorbidity_check,
+						bipolar1_check,
+						bipolar2_check,
+						perc_urls,
+						'',
+						exact_match_diagnosis
+					)
+				except Exception as e:
+					print(e) 
+					continue
 
 		conn.close()	
-		#return {'tweets': tweetsJSON, 'patientInfo': patientInfoJSON}
 
 
 	def timeStampAnalysis(self):
@@ -226,9 +322,9 @@ class StatsManager:
 						isIllness = 1
 					elif value != illness and value in usr['text'].lower() and (userText[userText.index(value) - 1] != '@' or userText[userText.index(value) - 1] != '#'):
 						otherDiseases = 1
-				if isIllness == 1 and otherDiseases == 0:
+				if (isIllness == 0 or isIllness == 1) and (otherDiseases == 0 or otherDiseases == 1): # change back to otherDiseases == 0 and illness == 0 to check for only illness
 					if usr['username'] not in userExists:
-						writer.writerow([usr['username'], usr['text']])
+						writer.writerow([usr['username'], usr['text'], usr['date_of_diagnosis']])
 						print '%s is %s' % (usr['username'], illness) # save to seperate file for each disease
 			elif illness != '' and illness2 != '': # check for comorbid disease based on both params
 				isIllness1 = 0

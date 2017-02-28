@@ -47,7 +47,12 @@ class Keywords:
 		'mental health support',
 		'mental health professional',
 		'mental health activist',
-		'social activist'
+		'social activist',
+		'inform',
+		'support',
+		'advocate',
+		'mental health',
+		'outreach'
 		]
 
 		self.depression_keywords = [

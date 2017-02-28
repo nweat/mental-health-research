@@ -140,11 +140,12 @@ def main(argv):
 		#################################################################PATIENTS TWEET ANALYSIS
 		#partition data focusing on bipolar, depression and with anxiety
 		#python main.py --ifile data_manager/data/diagnosed_users_in_depression.csv --partition 1 --illness 'depression' --illness2 'anxiety' --ofile depression_comorbid.csv
+		#python main.py --ifile data_manager/data/diagnosed_users_in_depression.csv --partition 1 --illness 'depression' --illness2 'anxiety' --ofile depression_comorbid.csv
 		elif partition and illness:
 			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
 			f = open(ofile, 'wb')
-			writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-			writer.writerow(["username","text"])
+			writer = csv.writer(f, quoting = csv.QUOTE_ALL)
+			writer.writerow(["username","text","date"])
 			print "\n******Extracting twitter users who made diagnosis statements******"    
 			diagnosed_users = stats_obj.extractDiagnosedUsers(inputFile)
 			if diagnosed_users:
@@ -155,7 +156,7 @@ def main(argv):
 		#
 		elif patient_timeline and illness: # and jsonf and jsonPatientInfo
 			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf patient_tweet_analysis/bipolar_comorbid_patient_tweets.json
-			# python main.py --ifile patient_tweet_analysis/bipolar/bipolar_patients.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf
+			# python main.py --ifile patient_tweet_analysis/bipolar/bipolar.csv --patient_timeline 1 --illness bipolar
 			
 			#outputJSON = codecs.open(jsonf, "w+", "utf-8")
 			#outputJSONPatientInfo = codecs.open(jsonPatientInfo, "w+", "utf-8")
