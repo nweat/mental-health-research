@@ -31,6 +31,8 @@ class HelperManager:
 			for idx, value in enumerate(self.model.depression_keywords):
 				if value in ((description).lower() or (screen_name).lower()):
 					DepressionRefDesc += 1
+
+			#NEED TO CHECK TWEETS FOR DEPRESSION KEYWORDS
 			"""
 			for user in tweepy.Cursor(self.twitter.followers, screen_name = screen_name).items(limit):
 				try:
@@ -38,8 +40,6 @@ class HelperManager:
 				except tweepy.TweepError as e:
 					print 'I just caught the exception: %s' % str(e)
 					continue
-
-
 
 			try:
 				for page in tweepy.Cursor(self.twitter.user_timeline, id=usr, count=200).pages(16):

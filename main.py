@@ -140,7 +140,7 @@ def main(argv):
 		#################################################################PATIENTS TWEET ANALYSIS
 		#partition data focusing on bipolar, depression and with anxiety
 		#python main.py --ifile data_manager/data/diagnosed_users_in_depression.csv --partition 1 --illness 'depression' --illness2 'anxiety' --ofile depression_comorbid.csv
-		#python main.py --ifile data_manager/data/diagnosed_users_in_depression.csv --partition 1 --illness 'depression' --illness2 'anxiety' --ofile depression_comorbid.csv
+		#python main.py --ifile data_manager/data/diagnosed_users_in_depression.csv --partition 1 --illness 'bipolar' --ofile depression_comorbid.csv
 		elif partition and illness:
 			inputFile = codecs.open(ifile, 'r', encoding = "utf-8")
 			f = open(ofile, 'wb')
