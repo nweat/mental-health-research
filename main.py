@@ -48,7 +48,7 @@ def main(argv):
 	"""
 	GLOBAL VARIABLES
 	"""
-	path = os.path.join(os.getcwd(), "data_manager/data/seed_nodes.txt")
+	path = os.path.join(os.getcwd(), "data_manager/data/seed_nodes.csv")
 
 	if len(argv) == 0:
 		print 'You must pass some parameters'
@@ -58,8 +58,9 @@ def main(argv):
 		auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 		auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 		api = tweepy.API(auth, wait_on_rate_limit = True, wait_on_rate_limit_notify = True)
-		#myStreamListener = data_manager.manager.TwitterStreamListener(500, path) # pass file and limit of sample normal user candidates to write to file
+		myStreamListener = data_manager.manager.TwitterStreamListener(1000, path) # pass file and limit of sample normal user candidates to write to file
 		#myStream = tweepy.Stream(auth = api.auth, listener = myStreamListener)
+		#myStream.filter(locations=[-180,-90,180,90])
 
 		helper_obj = data_manager.manager.HelperManager()
 		stats_obj = data_manager.manager.StatsManager(api)
@@ -122,16 +123,16 @@ def main(argv):
 		   outputFile = codecs.open(ofile, "w+", "utf-8")
 
 		   print '\n******Retrieving sample twitter users******'
-		   normal_user_obj.selectSampleTwitterUsers()
+		   normal_user_obj.selectSampleTwitterUsers() 
 		   if os.path.exists(path):
 			print "Done writing to file..."
 
-		   print '\n******Retrieving random seed nodes from file******'
-		   seed_node = normal_user_obj.selectRandomSeedNodes(path, 10)
-		   print seed_node
+		   #print '\n******Retrieving random seed nodes from file******'
+		   #seed_node = normal_user_obj.selectRandomSeedNodes(path, 5)
+		   #print seed_node
 
-		   print '\n***Conducting breadthTraversal to retrieve random number of filtered followers based on limit and depth **'
-		   normal_user_obj.breadthTraversal(seed_node, outputFile, 100, 4, 1)
+		   #print '\n***Conducting breadthTraversal to retrieve random number of filtered followers based on limit and depth **'
+		   #normal_user_obj.breadthTraversal(seed_node, outputFile, 100, 4, 1)
 		   outputFile.close()
 		elif pstats:
 			stats = stats_obj.statsPandas(ifile)
@@ -157,6 +158,8 @@ def main(argv):
 		elif patient_timeline and illness: # and jsonf and jsonPatientInfo
 			# python main.py --ifile patient_tweet_analysis/bipolar_comorbid/bipolar_comorbid.csv --patient_timeline 1 --ofile patient_tweet_analysis/bipolar_comorbid_patient_tweets.csv --jsonf patient_tweet_analysis/bipolar_comorbid_patient_tweets.json
 			# python main.py --ifile patient_tweet_analysis/bipolar/bipolar.csv --patient_timeline 1 --illness bipolar
+
+			# python main.py --ifile data_manager/data/seed_nodes.txt --patient_timeline 1 --illness normaluser --normalusers yes
 			
 			#outputJSON = codecs.open(jsonf, "w+", "utf-8")
 			#outputJSONPatientInfo = codecs.open(jsonPatientInfo, "w+", "utf-8")
@@ -164,11 +167,15 @@ def main(argv):
 			#csv_output = open(ofile, 'wb')
 			#writer = csv.writer(csv_output, quoting = csv.QUOTE_ALL)
 			#writer.writerow(["userid","screeName","lang","tweetID","tweetCreated","tweetText","favorites","retweet"])
-
 			conn = createConnection('data_manager/data/sqlite/patient_tweets.sqlite')
-			print "\n******Processing patient timelines******"  
-			diagnosed_users = stats_obj.getPatientNames(ifile)
-			stats_obj.getTweetsPerPartition(diagnosed_users, conn, illness) 
+			print "\n******Processing patient timelines******"
+
+			if normalusers == 'yes':
+				normal_users = stats_obj.extractNormalUsers(ifile)
+				stats_obj.getTweetsPerPartition(normal_users, conn, illness, normalusers) 
+			else:
+				diagnosed_users = stats_obj.getPatientNames(ifile)
+				stats_obj.getTweetsPerPartition(diagnosed_users, conn, illness) 
 
 			#outputJSON.write(json.dumps(tweets['tweets'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))
 			#outputJSONPatientInfo.write(json.dumps(tweets['patientInfo'], sort_keys = True, indent=4, ensure_ascii=False, separators=(',', ':'), default = helper_obj.myconverter))

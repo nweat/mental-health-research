@@ -4,6 +4,8 @@ patient_tweet_analysis/bipolar/*
 patient_tweet_analysis/bipolar_comorbid/*
 patient_tweet_analysis/depression/*
 patient_tweet_analysis/depression_comorbid/*
+patient_tweet_analysis/jupyter_stats/final_data/*
+patient_tweet_analysis/jupyter_stats/initial_data/*
 *.pyc
 .RData
 .Rhistory

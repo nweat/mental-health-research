@@ -22,6 +22,24 @@ class StatsManager:
 	def __init__(self, twitter):
 		self.model = models.Keywords()
 		self.twitter = twitter
+
+
+	@staticmethod
+	def extractNormalUsers(file):
+		normal_users = []
+		#comma delimited file - Get old tweets
+		
+		f = open(file, 'rt')
+		try:
+			reader = csv.reader(f)
+			for row in reader:
+				normal_users.append({
+					'username':row[0]
+					})
+			return normal_users
+		finally:
+			f.close()
+
 		
 	@staticmethod
 	def extractDiagnosedUsers(file):
@@ -86,18 +104,18 @@ class StatsManager:
 			print(er)
 
 
-	def createPatientRecord(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18):
-		sql = '''INSERT INTO ''' + table + '''_patients VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''
+	def createPatientRecord(self, conn, table, p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18,p19,p20):
+		sql = '''INSERT INTO ''' + table + '''_patients VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''
 
 		try:
 			cur = conn.cursor()
-			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18))
+			val = cur.execute(sql,(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18,p19,p20))
 			conn.commit()
 		except sqlite3.Error as er:
 			print(er)
 
 
-	def getTweetsPerPartition(self, diagnosed_users, conn, illness):
+	def getTweetsPerPartition(self, diagnosed_users, conn, illness, normalusers):
 		tweetsJSON = []
 		patientInfoJSON = []
 		userExists = []	
@@ -107,7 +125,14 @@ class StatsManager:
 
 		for usr in diagnosed_users:
 			usrname = usr['username']
-			userText = usr['text']
+			
+			if normalusers == 'yes':
+				userText = 'NORMAL USER'
+				usrDate = 'NORMAL USER'
+			else:
+				userText = usr['text']
+				usrDate = usr['date']
+
 			advocate_check = 0
 			comorbidity_check = 0 #if mentions of anxiety
 			bipolar1_check = 0
@@ -115,6 +140,8 @@ class StatsManager:
 			total_tweets = 0
 			total_urls = 0
 			exact_match_diagnosis = 1
+			total_depressed_keywords = 0
+			total_not_english = 0
 
 			page_list = []
 			try:
@@ -144,6 +171,19 @@ class StatsManager:
 						if len(re.findall(r'(https?://\S+)', text)) > 0: # if atleast 1 url in tweet
 							total_urls += 1
 
+						for idx, value in enumerate(self.model.disease_list):
+							if value in text.lower():
+								total_depressed_keywords += 1
+						for idx, value in enumerate(self.model.hashtags):
+							if value in text.lower():
+								total_depressed_keywords += 1
+						for idx, value in enumerate(self.model.depression_keywords):
+							if value in text.lower():
+								total_depressed_keywords += 1
+						for idx, value in enumerate(self.model.survivor_keywords):
+							if value in text.lower():
+								total_depressed_keywords += 1
+
 						mentions = " ".join(re.compile('(@\\w*)').findall(text))
 						hashtags = " ".join(re.compile('(#\\w*)').findall(text)).lower()
 						lat = 'NaN'
@@ -157,6 +197,8 @@ class StatsManager:
 						if tweet.place != None:
 							countryCode = tweet.place.country_code
 
+						if tweet.lang != 'en':
+							total_not_english += 1
 					
 						try:				
 							self.createTweetRecords(conn,illness,
@@ -179,7 +221,7 @@ class StatsManager:
 							continue
 						
 					print '\nTweets saved - %d' % tweetcount
-					
+				
 
 				for idx, value in enumerate(self.model.advocate_keywords):
 					if value in tweet.user.description.lower():
@@ -208,9 +250,13 @@ class StatsManager:
 					continue
 
 				perc_urls = round(((total_urls/float(total_tweets)))*100,2) if total_tweets > 0 else 'NaN' 
-				print "user: %s total_tweets: %s bipolar1: %s anxiety: %s total_urls: %d total_tweets: %d perc_urls: %s" % (usrname, total_tweets, bipolar1_check, comorbidity_check, total_urls, total_tweets, perc_urls)
+				perc_not_english = round(((total_not_english/float(total_tweets)))*100,2) if total_tweets > 0 else 'NaN' 
+				perc_depressed_keywords = round(((total_depressed_keywords/float(total_tweets)))*100,2) if total_tweets > 0 else 'NaN' 
+				print "user: %s total_tweets: %s bipolar1: %s anxiety: %s total_urls: %d total_tweets: %d perc_urls: %s perc_depressed_keywords: %s perc_not_english: %s " % (usrname, total_tweets, bipolar1_check, comorbidity_check, total_urls, total_tweets, perc_urls, perc_depressed_keywords, perc_not_english)
 				
+		
 				try:				
+					# save actual diagnosis statement to vet after
 					self.createPatientRecord(conn,illness,
 						userObj.id_str,
 						userObj.screen_name,
@@ -223,13 +269,15 @@ class StatsManager:
 						int(userObj.friends_count),
 						int(userObj.followers_count),
 						advocate_check,
-						usr['date'],
+						usrDate,
 						comorbidity_check,
 						bipolar1_check,
 						bipolar2_check,
 						perc_urls,
-						'',
-						exact_match_diagnosis
+						perc_not_english,
+						exact_match_diagnosis,
+						userText,
+						perc_depressed_keywords
 					)
 				except Exception as e:
 					print(e) 

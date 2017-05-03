@@ -87,27 +87,27 @@ class NormalUsersManager:
 		for sn in seedNodes:
 			try:
 				next_queue = self.getRandomFollowers(sn, flimit, fsampleSize)
-				outputFile.write('\n\nseed_node: %s' % (sn))
+				outputFile.write('%s\n' % (sn))
 
 				d = 1
 				while d <= depth:
 					print '\nDepth: %d' % d
-					outputFile.write('\nDepth: %d' % d)
+					#outputFile.write('\nDepth: %d' % d)
 					d += 1
 					(queue, next_queue) = (next_queue, [])
 					for _fid in queue:
 						_follower_ids = self.getRandomFollowers(_fid, flimit, fsampleSize)
 
 						if _follower_ids != None or len(_follower_ids) != 0:
-							outputFile.write('\n\n%d random sample followers of %s:' % (len(_follower_ids),_fid))
+							outputFile.write('%s\n:' % (_fid))
 							print '\n%d random sample followers of %s:' % (len(_follower_ids),_fid)
 
 							for ids in _follower_ids:
-								outputFile.write('\n\nrandom sample follower of %s: %s' % (_fid, ids))
+								outputFile.write('%s\n' % (ids))
 								print '\nrandom sample follower of %s: %s' % (_fid, ids)
 							next_queue += _follower_ids
 						else:
-							outputFile.write('\n\nFollowers not found for %s, maybe protected acount' % _fid)
+							#outputFile.write('\n\nFollowers not found for %s, maybe protected acount' % _fid)
 							print 'Followers not found for %s, maybe protected acount' % _fid
 			except Exception as e:
 				print 'I just caught the exception: %s' % str(e)
