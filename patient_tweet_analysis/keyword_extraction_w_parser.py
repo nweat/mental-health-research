@@ -12,7 +12,7 @@ import subprocess
 from nltk.corpus import stopwords
 import string
 
-filepath = os.path.abspath(os.path.dirname(__file__))
+filepath = 'jupyter_stats/final_data'#os.path.abspath(os.path.dirname(__file__))
 
 reload(sys)  
 sys.setdefaultencoding('utf8')
@@ -146,7 +146,7 @@ def extract_users(text, to_normalize=True):
 
 
 def get_emoji_list():
-	emoji_text = codecs.open(filepath+'/emoji_table.txt', 'r', 'utf-8').read().split('\n')
+	emoji_text = codecs.open(filepath+'/emoji_table.csv', 'r', 'utf-8').read().split('\n')
 	emojis = [x.split(',')[0] for x in emoji_text][1:]
 	emojis = [x for x in emojis if x.strip() != '']
 	return emojis

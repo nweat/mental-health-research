@@ -2,6 +2,7 @@ import multiprocessing as mp
 import pandas as pd
 import pandas.util.testing as pdt
 import numpy as np
+import csv
 from itertools import repeat
 
 ##################################################################################
@@ -25,7 +26,7 @@ def process((bipolar_tweets, user_top_used_geo_tag)):
     return bipolar_tweets_with_geo
 
 if __name__ == '__main__':
-    bipolar_tweets = pd.read_csv('../selected-users-tweets.csv')
+    bipolar_tweets = pd.read_csv('../initial_data/selected_normal_users_tweets_less5.csv')
 
     df = bipolar_tweets.groupby(['username', 'tweetLat','tweetLong'])['tweetLong'].agg({'count':'count'})
     mask = df.groupby(level=0).agg('idxmax')
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
     # merging newly calculated parts to big_df
     #big_df = pd.concat([big_df, parts], axis=1)
-    parts.to_csv('../final_data/labelMIssingGeo.csv', index = False, encoding='utf-8')
+    parts.to_csv('../final_data/users_final_normal/labelMIssingGeo_normalusers.csv', index = False, quotechar='"', quoting=csv.QUOTE_ALL) #, encoding='utf-8'
 
     # checking if the dfs were merged correctly
     #pdt.assert_series_equal(parts['id'], bipolar_tweets['id'])

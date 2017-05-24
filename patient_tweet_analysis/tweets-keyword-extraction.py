@@ -2,17 +2,25 @@ import os, csv
 import pandas as pd
 from multiprocessing import Pool
 import keyword_extraction_w_parser
-from nltk.corpus import stopwords
 import string
+from nltk.corpus import stopwords
 import re
 from collections import Counter
 from unicodedata import normalize
+from unidecode import unidecode
 from nltk import bigrams 
+
 
 ###############################################################################################
 #########################         KEYWORD EXTRACTION             #############################
 ###############################################################################################
 
+normal_users = 'jupyter_stats/final_data/users_final_normal/'
+bipolar_users = 'jupyter_stats/final_data/users_final/'
+file_in_normal = normal_users + 'labelMIssingGeo_normalusers.csv'
+file_out_normal = normal_users + 'normal_user_extracted_400_common_words_per_user.csv'
+file_in_bipolar = bipolar_users + 'labelMIssingGeo_preprocessed.csv'
+file_out_bipolar = bipolar_users + 'bipolar_user_extracted_400_common_words_per_user.csv'
 
 emoticons_str = r"""
 (?:
@@ -70,7 +78,7 @@ def process_csv(filename):
  
     
     # for each unique user get frequent words from their tweets
-    f = open('depression_comorbid_tweets_extracted_200common_words_per_user.csv', 'wb')
+    f = open(file_out_normal, 'wb')
     writer = csv.writer(f, quoting=csv.QUOTE_ALL)
     writer.writerow(["username","freqwords","freqhashtags","freqmentions"])
     for usr in uniqueUsers:
@@ -78,31 +86,44 @@ def process_csv(filename):
         count_all = Counter()
         count_hash = Counter()
         count_mentions = Counter()
+        count_bigrams = Counter()
         freqwords = []
         freqhashtags = []
         freqmentions = []
+        freqbigrams = []
         for row in rows:
             if row['username'] == usr:
+                text = row['tweetText'].lower() #" ".join(row['withStopWords']).strip() #row['tweetText']
+                hashtags = row['hashtags']
+                mentions = row['mentions']
                 #terms_all = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term not in stop]
-                terms_hash = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term.startswith('#')]
-                terms_mentions = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term.startswith('@')]
-                terms_only = [term for term in preprocess(row['tweetText'].lower().decode('unicode_escape').encode('ascii','ignore')) if term not in stop and not term.startswith(('#', '@'))] #.decode('unicode_escape').encode('ascii','ignore')
+                terms_hash = [term for term in preprocess(unidecode(hashtags)) if term.startswith('#')]
+                terms_mentions = [term for term in preprocess(unidecode(mentions)) if term.startswith('@')]
+                terms_only = [term for term in preprocess(unidecode(text)) if term not in stop and not term.startswith(('#', '@'))] #.decode('unicode_escape').encode('ascii','ignore')
+                terms_bigram = [term for term in preprocess(unidecode(text)) if term not in stop]
                 terms_only = set(terms_only)
                 terms_hash = set(terms_hash)
                 terms_mentions = set(terms_mentions)
+                #terms_bigram = bigrams(terms_bigram)
+                #terms_bigram = set(terms_bigram)
                 #terms_bigram = bigrams(terms_all)
                 count_all.update(terms_only)
                 count_hash.update(terms_hash)
                 count_mentions.update(terms_mentions)
+                #count_bigrams.update(terms_bigram)
 
-        for word, count in count_all.most_common(200):
+
+        for word, count in count_all.most_common():
             freqwords.append(word)
-        for word, count in count_hash.most_common(200):
+        for word, count in count_hash.most_common():
             freqhashtags.append(word)
-        for word, count in count_mentions.most_common(200):
+        for word, count in count_mentions.most_common():
             freqmentions.append(word)
+        #for word, count in count_bigrams.most_common():
+            #freqbigrams.append(word)
 
-        writer.writerow([usr, " ".join(freqwords), " ".join(freqhashtags), " ".join(freqmentions)]) 
+
+        writer.writerow([(usr), " ".join((freqwords)), " ".join((freqhashtags)), " ".join((freqmentions))])  #, " ".join(str(freqbigrams))
 
 def main():
     # set up your pool
@@ -110,7 +131,8 @@ def main():
 
     # get a list of file names
     #files = os.listdir('.')
-    file_list = ['depression_comorbid/depression_comorbid_tweets.csv']
+    
+    file_list = [file_in_normal]
 
     #for f in file_list:
       # process_csv(f)

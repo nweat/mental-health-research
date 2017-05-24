@@ -14,7 +14,7 @@ library(grid)
 library(gridExtra)
 
 #SAMPLE TWEET CREATED DATE FORMAT:: 2016-12-28 05:38:01
-tweets = read.csv("D:\\twitter-mental-health-research\\mental-health-research\\patient_tweet_analysis\\depression\\depression_tweets.csv", header = TRUE)
+tweets = read.csv("initial_data/selected_bipolar_users_tweets.csv", header = TRUE)
 tweets$tweetCreated = ymd_hms(tweets$tweetCreated)
 tweets$tweetCreated = with_tz(tweets$tweetCreated, "America/New_York")
 

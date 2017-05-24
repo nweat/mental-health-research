@@ -20,26 +20,30 @@ library(gridExtra)
 #custom tweet cleaning
 #removeURL <- function(x) gsub("http[[:alnum:]]*", "", x)
 
-tweets = read.csv("D:\\twitter-mental-health-research\\mental-health-research\\patient_tweet_analysis\\depression\\depression_tweets_extracted_200common_words_per_user.csv", header = TRUE)
+normal = "initial_data/selected_normal_users_less5.csv"
+bipolar = "initial_data/selected_bipolar_users.csv"
+test = "greaterthan1perc_bipolarusers.csv"
+
+tweets = read.csv(test, header = TRUE)
 #tweets = fromJSON(file = "bipolar_comorbid_patient_tweets.json" )
-review_corpus = Corpus(VectorSource(tweets$freqhashtags)) #readerControl = list(blank.lines.skip=TRUE
+review_corpus = Corpus(VectorSource(tweets$desc)) #readerControl = list(blank.lines.skip=TRUE
 review_corpus = tm_map(review_corpus, PlainTextDocument)   
 review_corpus = tm_map(review_corpus, content_transformer(tolower))
-#review_corpus = tm_map(review_corpus, removeURL)
-#review_corpus = tm_map(review_corpus, removeNumbers)
+review_corpus = tm_map(review_corpus, removeURL)
+review_corpus = tm_map(review_corpus, removeNumbers)
 review_corpus = tm_map(review_corpus, removePunctuation)
-review_corpus = tm_map(review_corpus, removeWords, c('the','make','year','tweet', 'this', 'use', 'guy', 'girl','ive','get','dont','say', stopwords("english")))
+review_corpus = tm_map(review_corpus, removeWords, c(stopwords("english")))
 review_corpus = tm_map(review_corpus, stemDocument)   
 review_corpus = tm_map(review_corpus, stripWhitespace)
 
 #inspect(review_corpus[1])
 #dataframe = data.frame(text=unlist(sapply(review_corpus, `[`, "content")), stringsAsFactors=F)
 #dataframe
-review_dtm_tfidf = DocumentTermMatrix(review_corpus, control = list(weighting = weightTfIdf))
-review_dtm_tfidf = removeSparseTerms(review_dtm_tfidf, 0.95) # remove less frequent words
+review_dtm_tfidf = DocumentTermMatrix(review_corpus)
+#review_dtm_tfidf = removeSparseTerms(review_dtm_tfidf, 0.95) # remove less frequent words
 review_dtm_tfidf
 freq = data.frame(sort(colSums(as.matrix(review_dtm_tfidf)), decreasing=TRUE)) 
-wordcloud(rownames(freq), freq[,1], random.order = FALSE, colors=brewer.pal(1, "Dark2"))# max.words=100, #random.order = FALSE
+wordcloud(rownames(freq), freq[,1],max.words=400, random.order = FALSE, colors=brewer.pal(1, "Dark2"))# max.words=100, #random.order = FALSE
 
 
 
